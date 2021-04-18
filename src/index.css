@@ -11,3 +11,30 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+
+/* NAVBAR------------------------------------------------------------ */
+.navbar ul {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+}
+
+.navbar li {
+  list-style: none;
+  width: 8vw;
+  padding: .5vw;
+  margin: .5vw;
+  border: 1px solid black;
+}
+
+.navbar a{
+  text-decoration: none;
+  text-align: center;
+  hyphens: auto;
+  font-size: 9px;
+}
+
+
+
+
