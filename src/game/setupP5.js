@@ -1,16 +1,7 @@
 'use strict'
 
-let load = async (url)=>{
-  let res = await fetch(url)
-  .then(function(response) {
-    return response;
-  })
-  return res
-  
-}
 
-
-const game = (p, assets) => {
+const game = (p, gameType, assets) => {
   //used to se the order of execution
   let eFlowArr = []
   const eFlow = (fName)=>{
@@ -31,15 +22,14 @@ const game = (p, assets) => {
     //1 create game and board
     //create board and game (using function parameters B, L etc. as functionScope variables insted of making them global)
     let B = new Board(gameBoard, p) 
-    
-    let L = new Game(newGame, p, B, assets)
+    console.log(gameType)
+    let L = new Game(gameType, p, B, assets)
 
     //2 add StartMaterial and display CHallenge
     //  (Show stateRep)
     // (show challenge)
     // place Evaluate
     // create tool menu
-    
     
 
     //3 game started - 
@@ -89,6 +79,9 @@ const game = (p, assets) => {
     window.p = p
     window.B = B
     window.L = L
+    window.removeDom = false
+    window.zoom = false
+    window.eTimer = null
 
 
     
@@ -102,7 +95,6 @@ const game = (p, assets) => {
   
   p.draw = function() {
     // console.log("challenge is -->", L.challenge)
-    
     //createe background
     p.background(L.skin.pallet.c3)
 
@@ -141,18 +133,21 @@ const game = (p, assets) => {
     
 
     // let pos = B.boardToScreenCoordConverter(0,0)
-    let pos = B.canvasToScreenCoordConverter(30,30)
-    //DOM elements need to be removed with each draw.
-    let t = p.createP('this is some text inside inside a p-tag');
-    t.style('font-size', '20px');
-    t.style('border', '1px solid red');
-    t.style('margin', '0');
-    t.style('padding', '0');
-    t.position(pos.x ,pos.y);
-
     
+    //DOM elements need to be removed with each draw.
+    // let t = p.createP('this is some text inside inside a p-tag');
+    // t.style('font-size', '20px');
+    // t.style('border', '1px solid red');
+    // t.style('margin', '0');
+    // t.style('padding', '0');
+    // t.position(pos.x ,pos.y);
 
-    console.log("Game started")
+    //Dom elements
+    if(!removeDom && !zoom) {
+      
+      // L.operations[0].shape.DOM_mechInterface.display()
+    }
+    
   }
   
 
@@ -167,16 +162,20 @@ const game = (p, assets) => {
     console.log(e.x, e.y)
     console.log(e.target)
 
-    if(e.target.localName == "canvas") {
+    if(e.target.localName == "canvas" || e.target.className.includes("closeButton")) {
       console.log("canvas")
+      window.dom = false
+      removeDom = true
     } else {
       console.log("DOM element")
-      e.target.style.color = "red"
-      e.target.style.border = "1px solid green"
+      // e.target.style.color = "red"
+      // e.target.style.border = "1px solid green"
 
+      //indicates a dom element is clicked
+      window.dom = true
 
+      return
     }
-
 
     // B.mouseValues(e)
 
@@ -189,30 +188,35 @@ const game = (p, assets) => {
     //checks if a target or a port was hit
     let target = mechArr.find(item=>{
       let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
-      let check = item.shape.portList.find(port=>port.insidePort(x,y) && port.type=="out")
+      let check = item.shape.portList.find(port=>port.insidePort(x,y) && (port.type=="out" || (port.portName=="portIn" && !port.open) ) )
       if(check) {port = check}
+      
       check = !check ? item.shape.posInsideShape(x,y, "shape") : check
       return check
     })
 
+    // console.log("CLICKED", port, target)
+
     if(port) {
+      console.log("port Clicked")
       if(port.type=="out" && port.open) {
         console.log("port created")
         port.createOpenConnection(null)
         console.log("connection created")
       } else {
         console.log("release connection")
-        port = null
       }
     } else if (target) {
+      console.log(target.id, "clicked")
       //is it an op or a staterep?
-      console.log(target)
       if(target.id.startsWith("op")) {
-        target.shape.moving = true
 
-      } else {
-        target.shape.clicked()
-      }
+        //waits before dragging event is activated and if mouse is released before the eTimer is cleared
+        window.eTimer = setTimeout(()=>{
+          target.shape.moving = true
+        }, 200)
+
+      } 
 
     } else {
       B.movingBoard = true
@@ -227,22 +231,17 @@ const game = (p, assets) => {
   //eventlistener for release event.
   p.mouseReleased = function(e) {
     B.movingBoard = false 
-
-    if(target) {
-      if(target.shape.moving) {
-        let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
-        target.shape.dropped(x,y)
-      } else {
-        target.shape.mechInfo()
-      }
-
-
-      window.target = null
+    if(dom) {
+      //if a dom element have been clicked
+      return
+    } else {
+      removeDom = true
     }
+
+    eTimer ? clearTimeout(eTimer) : {} 
 
     if(port) {
       //port is the starting object. 
-      console.log(port)
 
       let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
       
@@ -253,20 +252,54 @@ const game = (p, assets) => {
         port.connection.attachToPort(endPort)
         let check = L.connectMechs(port.mech, endPort.mech)
         !check ? console.log("did mechs failed to connect?", port.mech, endPort.mech) : {}
-      } else {
+      } else  if(!port.open && (port.portName == "portIn" || port.portName == "portOut") ){
+        //if a closed OP_portIn or a closed SR_portOut is clicked)
+        port.connection.detachPorts()
+      } else if (port.open){
+        //port is open and is being dragged
         port.connection.killConnection()
+
       }
 
+      window.port = null
+    } else if(target) {
+      if(target.shape.moving) {
+        let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
+        target.shape.dropped(x,y)
+      } else {
+        target.shape.clicked()
+      }
+
+
+      window.target = null
     }
 
+    
+
     //collect data
-    // L.updateGameState()
+ 
     p.noLoop()
+
+    
+    //to avoid duplicattion of dom elements they need to be removed
+    if(removeDom) {
+      L.domElems.forEach(item=>{item.removeElem()})
+      removeDom = false
+    }
+
     return false
   }
 
   //event for drag 
   p.mouseDragged = function(e) {
+    eTimer ? eTimer = null : {}
+    
+    if(dom) {
+      //if a dom element have been clicked
+      return
+    } else {
+      removeDom = true
+    }
     // console.log("x-move", e.movementX)
     // console.log("y-move",e.movementY)
   
@@ -313,7 +346,9 @@ const game = (p, assets) => {
 
 
   p.mouseWheel = function(e){
+    zoom = true
     e.preventDefault()
+
   
     if(B.boardInsideCanvas().all) {
       B.zF = e.delta>0 ? B.zF*(1+B.zSpeend) : B.zF*(1-B.zSpeend)   //increments with 0.01
@@ -321,8 +356,9 @@ const game = (p, assets) => {
       B.zF = B.zF*(1+B.zSpeend)
     }
   
+    
     p.redraw()
-  
+    zoom = false
   }
 
   p.preload = function() {
@@ -332,6 +368,11 @@ const game = (p, assets) => {
         icon: p.loadImage(item.path)
       }
     })
+    let o = {}
+    assets.fonts.forEach(f=>{
+      o[f.name] = p.loadFont(f.path)
+    })
+    assets.fonts = o
 
 
   }

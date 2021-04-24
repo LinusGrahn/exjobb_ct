@@ -168,7 +168,7 @@ class Game {
     //#new Material
     this.stateReps = o.stateReps ? o.stateReps.map(item=>new StateRep(item,this.p, this, this.B)) : []
     // this.states
-
+    this.domElems = o.domElems ? o.domElems : []
     
     this.gameId = o.gameId ? o.gameId : newId("game")
     this.unitSize = 5
@@ -184,7 +184,26 @@ class Game {
     return `${side.toUpperCase()}: ${v}`
   }
 
+  //compares two arrays return true if they match else false and with (ReturnList == true all diffrenses are returned)
+  static compareArraysByProps(arr1, arr2, itemProp) {
+    let filterArr = arr1.length > arr2.lengh ? [...arr1] : [...arr2]  
+    let checkArr = arr1.length > arr2.lengh ? [...arr2] : [...arr1]
+    
+    filterArr = filterArr.map(item=>{
+      if(checkArr.find(el=>el[itemProp]==item[itemProp])) {
+        return "match"
+      } else {
+        return item
+      }
+    }).filter(item=>item!="match")
 
+    console.log(filterArr)
+    if(filterArr.length) {
+      return false
+    } else {
+      return true
+    }
+  }
 
   updateGameState(trigger) {
     //update function in mech return {res: bool, message: array/ obj or string}
@@ -209,12 +228,12 @@ class Game {
     });
 
     let trigUp = [...opUpdates, ...SRUpdates].find(item=>item.res)
-    console.log("triggerUpdate?:", Boolean(trigUp), trigUp)
+    // console.log("triggerUpdate?:", Boolean(trigUp), trigUp)
 
-    if(+this.retriggerUpdate>20) {
+    if(+this.retriggerUpdate>100) {
       console.log("too many updates triggered")
-      console.log("opUppdates", opUpdates)
-      console.log("stateRepUpdates", SRUpdates)
+      // console.log("opUppdates", opUpdates)
+      // console.log("stateRepUpdates", SRUpdates)
       return
     } 
 
@@ -267,14 +286,16 @@ class Game {
   }
 
   disconnectMechs(stateRepOut, mechIn) {
-   eFlow("Game/DisconnectMechs")
-   console.log(stateRepOut)
+   eFlow("Game/disconnectMechs")
+   console.log(stateRepOut, mechIn)
 
     stateRepOut.disconnectPort("portOut", false)
+    
     if(mechIn.id.startsWith("op")) {
       mechIn.disconnectPortIn()
     } else {
-      stateRepOut.disconnectPort("portInB", stateRepOut)
+      console.log("SR inB remove")
+      mechIn.disconnectPort("portInB", stateRepOut)
     }
     
   }

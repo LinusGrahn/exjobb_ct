@@ -1,34 +1,27 @@
 import React from 'react';
 import '../game/stylesheet.css'
 
-// import "../game/p5.min.js"
-
-// import "../game/rules/styles.js" 
-// import "../game/rules/bpandMat.js" 
-// import "../game/rules/globalfunc.js" 
-// import "../game/rules/operations.js" 
-// import "../game/rules/gameObjects.js" 
-// import "../game/classes/gameObj.js" 
-// import "../game/classes/mechObjMat.js" 
-// import "../game/classes/mechObjOp.js" 
-// import "../game/classes/shapeObj.js" 
-
-
-
 
 const Game = (props) => {
-  // let {plant, openDetail} = props 
-  window.location = "/src/game/play_game.html"
+  let {participant} = props
+  
 
-
-  // console.log(deletePlant, editPlant)
-  // actions --> myplant or search result
-
+  console.log(participant)
+  
+  
+  
+  
+  
+  
+  
+  console.log(participant)
+  // localStorage.setItem("par", JSON.stringify(participant))
+  window.par = participant
   return (
     <div>
-      <div>Game go game</div>
-
-     
+      {participant.fingerPrint ? 
+        <iframe title="game" type="html" src="http://localhost:8888/exjobb_ct/src/game/play_game.html" width={window.innerWidth} height={window.innerHeight}></iframe>
+      : <div>waiting for par</div>}
     </div>
   )
 

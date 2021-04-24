@@ -2,7 +2,7 @@
 const newId = (type) => {
     let idTypes = [
       "op", "mat", "game", "mod", "prod", "wood", "stateRep",
-      "opCut", "opSort", "shape", "port", "connection"
+      "opCut", "opSort", "shape", "port", "connection", "DOMS"
       
     ]
 

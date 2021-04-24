@@ -89,16 +89,23 @@ class StateRep {
       //if mech is added to portInB
       this.portInB.push(mech)
       
-      this.matList.push(...mech.matList.map(item=>{
+      let mat = mech.matList.map(item=>{
         let newItem = {...item}
         newItem.clone = true;
         newItem.prevMat.push(item)
         newItem.fromMechId = mech.id
         newItem.curMechId = this.id
-        newItem.queue = newItem.length + 1
+        newItem.queue = newItem.prevMat.length + 1
         return newItem
         //#new Material
-      })) //Id from new remain
+      }) //Id from new remain
+
+      
+      mat.forEach(item=>{
+        this.matList.push(item)
+        this.L.materials.push(item)
+
+      })
       res = true
     }
 
@@ -143,7 +150,7 @@ class StateRep {
       let newMatFromInB = allMatFromInB.filter(m=>!this.matList.find(mat=>mat.uniqueKey==m.uniqueKey))
       //newMatFromInB should now contain all new materials from inB
       //matFromInA Should now contain all materials from inA or startmat
-      console.log(newMatFromInB, matFromInA)
+      // console.log(newMatFromInB, matFromInA)
 
       let oldMat = []
       oldMat = this.matList.filter(mat=>!matFromInA.find(m=>m.uniqueKey==mat.uniqueKey))
@@ -151,13 +158,14 @@ class StateRep {
       let oldMatToKeep = oldMat.filter(mat=>allMatFromInB.find(m=>m.uniqueKey==mat.uniqueKey))
  
 
-      //neew to remove old matToRemove?
+      //need to remove old matToRemove?
+      console.log("old mat to remove", oldMatToremove.length)
 
       //creates a clone of newMatFromInB
       newMatFromInB = newMatFromInB.map(item=>{
         //needs to be removed from matList
         let newItem = {...item}
-        console.log("new clonse from:", item)
+        // console.log("new clone from:", item)
 
         newItem.clone = true
         newItem.prevMat.push(item)
@@ -182,7 +190,7 @@ class StateRep {
       // console.log("this.matlist after", this.matList.map(i=>i.id.substr(-4) + "----uKey: "+ i.uniqueKey.substr(-4)))
 
     } else {
-      console.log("portinb is empty")
+      // console.log("portwinb is empty")
 
       if(this.portInB.length != this.curSelfState.portInB.length) {
         console.log("portInB has changed")
@@ -219,7 +227,13 @@ class StateRep {
       this.passedMatList = []
     }
 
+    //return true if the arrays contain the same materials
+    
     this.curSelfState = {...this}
+    
+    
+
+
     
 
     return res
@@ -228,21 +242,27 @@ class StateRep {
   disconnectPort(port, mech) {
     //if a mech is passed it is removed from the this[port]List
     //in case of port is inB and only a specifiic one needs to be removed
+    let updOp = false
+
     if(!mech) {
       this[port] = []
     } else {
+      // mech.matList.forEach(item=>{
+      //   // this.matList.splice(this.matList.findIndex(m=>item.uniqueKey==m.uniqueKey), 1)
+      // })
       this[port].splice(this[port].findIndex(item=>item.id==mech.id), 1)
+      
+      updOp = this.portOut.length ? (this.portOut[0].id.startsWith("op") ? true : false ) : false
     }
-
-    this.updateStateRepPorts()
-
+    
+    if(updOp) {
+      this.portOut[0].resetOperation()
+    } else {
+      this.updateStateRepPorts()
+    }
+    
     //remove Mat from matList if necesary.
 
-
-  }
-
-  //a mat that is added to new mat have a next mat if this stateRep (this) are connected to a operation
-  addNextMatToMatListObj() {
 
   }
 

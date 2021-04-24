@@ -1,8 +1,172 @@
+@font-face {
+  font-family: "breadFont";
+  src: url(./assets/fonts/Oswald/Oswald-VariableFont_wght.ttf) format("truetype");
+}
+@font-face {
+  font-family: "headFont";
+  src: url(./assets/fonts/Dela_Gothic_One/DelaGothicOne-Regular.ttf) format("truetype");
+  
+}
+
+
+:root {
+  --corner: 15px;
+  /* //blue */
+  --c1: rgb(68,85,93);
+  --textInv: var(--c1);
+  /* //beige */
+  --c2: rgb(220,198,176); 
+  /* // terracotta */
+  --c3: rgb(164,124,93); 
+  /* strokeColor + skrokw width == border color  */
+  --stroke: 1px solid black; 
+  --fontSize: 16px;
+  
+  --c1T: rgba(68,85,93,.3); 
+  --c2T: rgba(220,198,176,.3); 
+  --c3T: rgba(16,124,93,.3); 
+  --mat: rgb(164,124,93)
+}
+
 body {
   margin: 0;
-
+  color: var(--c2);
+  font-family: "breadFont";
+  font-size: var(--fontSize);
 }
+
+h1, h2, h3, h4, h5 {
+  font-Family: "headFont";
+  letter-spacing: 2px;
+}
+
+
 
 canvas {
   border: 1px solid black;
+}
+
+
+
+.wrapper {
+  /* height: 35vh; */
+  width: 90vw;
+  background-color: var(--c1);
+  padding: 2vh 2vw;
+  margin: 3vh 3vw;
+  border-radius: var(--corner);
+
+  box-shadow: 1px 8px 28px -8px rgba(0,0,0,0.65);
+  -webkit-box-shadow: 1px 8px 28px -8px rgba(0,0,0,0.65);
+  -moz-box-shadow: 1px 8px 28px -8px rgba(0,0,0,0.65);
+
+}
+
+.flex, .block, .gallery, .flexCenter {
+  margin: 0 0 10px;
+}
+
+.flex {
+  display: flex;
+}
+
+.flexCenter {
+  display: flex;
+  justify-content: center;
+}
+
+.block {
+  
+}
+
+.gallery {
+  display: flex;
+}
+
+.headerLrg, .headerSml {
+  display: flex;
+  align-items: center;
+  font-family: "headFont";
+  letter-spacing: 2px;
+}
+
+.headerSml {
+  font-size: 18px;
+
+}
+
+.headerLrg {
+  font-size: 24px;
+}
+
+.icon {
+ width:7vw;
+ height: 7vw;
+ background-size: contain;
+ margin-right: 5px;
+}
+
+.gameP {
+  background-color: var(--c2);
+  color: var(--c1);
+  border-radius: var(--corner);
+  padding: 10px;
+  margin: 0;
+}
+
+.button {
+  background-color: var(--c2);
+  color: var(--c1);
+  border: none;
+
+  display: block;
+  padding: 5px 10px;
+  margin: 5px 0 5px 0;
+  border-radius: var(--corner);
+  font-family: "breadFont";
+  font-size: var(--fontSize);
+}
+
+.button:active {
+  border: 2px solid var(--c2);
+  background-color: var(--c2T);
+  color: var(--c2);
+  margin: 3px 0 3px 0;
+
+}
+
+.slider {
+  width: 75%;
+
+}
+
+.sliderValue {
+  background-color: var(--c2);
+  color: var(--c1);
+  border: none;
+
+  padding: 5px 0 5px 10px ;
+  margin: 3px;
+  border-radius: var(--corner);
+  font-family: "breadFont";
+  font-size: var(--fontSize);
+  width: 20%
+}
+
+.selected {
+  border: 2px solid var(--c2);
+  background-color: var(--c2T);
+  color: var(--c2);
+}
+
+.closeButton {
+  width: 30px;
+  height: 30px;
+  background-image: url(./assets/icons/icon_crossBeige.png);
+  background-size: contain;
+  background-color: var(--c1);
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border-radius: 50%;
 }

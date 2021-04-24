@@ -21,9 +21,11 @@ class Operations {
 
     this.doneMatList = o.doneMatList ? o.doneMatList : []
     this.toDoMatList = o.toDoMatList ? o.toDoMatList : []
+    this.outputtedMatList = o.outputtedMatList ? o.outputtedMatList : []
 
     
     this.parameters = o.parameters
+    this.prevParameters = {...this.parameters}
     
     
     this.cost = o.cost
@@ -34,6 +36,7 @@ class Operations {
     
     
     this.shape = o.shape ? o.shape : new OpShape(this.pos, this, this.p, this.L, this.B)
+    
     
     this.new ? this.closePortsOut() : {}
     this.new ? this.createPortOutStateReps() : {}
@@ -81,7 +84,6 @@ class Operations {
       this.portOutB = "closed"
     }
   }
-
 
   connectStateRepToPortIn(stateRep) {
     eFlow("Operations/connectStateRepToPortIn")
@@ -193,6 +195,20 @@ class Operations {
     
     this.L.updateGameState()
   }
+
+  //returns true if parameters changed
+  parametersChanged() {
+    let arr = Object.entries(this.parameters)
+    let res = arr.map(item=>{
+      return this.prevParameters[item[0]] == item[1]
+    }).find(item=>!item)
+
+    this.prevParameters = {...this.parameters}
+    return !res
+  }
+
+  
+
 }
 
 
@@ -205,11 +221,23 @@ class Cut extends Operations {
 
   //used for most subClasses of Operations
   setParameters() {
-    let {side, meassure} = this.parameters
-    side = side ? side : "b"
-    meassure = meassure ? meassure: 10
+    //if parameters have changed the donelist should change
 
-    this.parameters = {side: side, meassure: meassure}
+
+    let {side, measure} = this.parameters
+    
+    side = side ? side : "b"
+    measure = measure ? measure: "1/3"
+
+    this.parameters = {side: side, measure: measure}
+  }
+
+  parameterDisplay() {
+    let side = this.parameters.side=="l" ? "längden" : "brädden"
+
+    let string = `Kapa [${this.parameters.measure}] av [${side}]`
+    
+    return string
   }
 
   //usd for all subclasses of oberations
@@ -217,21 +245,27 @@ class Cut extends Operations {
     eFlow("CUT/executeOP cut")
 
     this.setParameters()
-    let {side, meassure} = this.parameters
+    let {side, measure} = this.parameters
+    //controls that parameters are set
+    if(!side, !measure) {
+      status = false
+      return status
+    }
     
     let status
     // console.log("cut:", this.toDoMatLists)
     this.toDoMatList.forEach(item => {
+      // console.log(item, measure, side)
       if(item.type != "wood") {
         console.log("cut only takes wood, " + item.type + " was ignored")
         return
       }
       if(this.portIn.passedMatList.find(m=>m.uniqueKey==item.uniqueKey)) {
-        console.log("mat have been processed and was ignored", item)
+        // console.log("mat have been processed and was ignored", item)
         return
       }
 
-      let output = this.action(side, +meassure, item.parts)
+      let output = this.action(side, measure, item.parts)
       // console.log("outPut cut", output)
       if(output!="Failed") {
         Object.entries(output).forEach(outI=>{
@@ -253,6 +287,7 @@ class Cut extends Operations {
           //#new Material from cutOperation
           this["portOut" + outI[0].toUpperCase()].matList.push(n)
           this.doneMatList.push(n)
+          this.outputtedMatList.push(n)
           // this["portOut" + outI[0].toUpperCase()].updateStateRepPorts()
 
           // console.log("cut to "+outI[0]+" Succeded from", item.id.substr(-4) + "----uKey: "+ item.uniqueKey.substr(-4) + "---clone: "+item.clone+ " B-->"+item.parts.b)
@@ -275,9 +310,46 @@ class Cut extends Operations {
     return status
   }
 
+  resetOperation(upd) {
+    //if argument is undefined it should be true
+    upd = upd==undefined ? true : upd
+    //remove all elemnts from outputs
+    //each element that exist in port ut is removed from portOutMec and from material list
+    this.outputtedMatList.forEach(item=> {
+      // console.log("L.matlength before",L.materials.length)
+
+      //get the materials to remove both clone and original
+      let mats = this.L.materials.filter(m=>m.uniqueKey==item.uniqueKey)
+      //if mat is undefined the loop is never executed
+      mats.forEach(mat=> {
+        let SRList = L.stateReps.find(m=>m.id == mat.curMechId).matList
+        // console.log("srlist before", SRList.length)
+        SRList.splice(SRList.findIndex(m=>m.uniqueKey==mat.uniqueKey), 1)
+        // console.log("srlist after", SRList.length)
+
+        this.L.materials.splice(this.L.materials.findIndex(m=>m.uniqueKey==mat.uniqueKey && m.clone==mat.clone),1)
+      })
+
+      // console.log(L.mat length after",L.materials.length)
+     
+
+    })
+    
+    this.toDoMatList = []
+    this.doneMatList = []
+    this.portIn? this.portIn.passedMatList = [] : {}
+    
+    if(upd) {
+      this.L.updateGameState()
+    }
+
+  }
+
   updateOperationPorts() {
     eFlow("Cut/updateOperationPorts")
     
+    
+
     if(this.portIn) {
       this.updateToDoList("wood")
     }
@@ -293,6 +365,8 @@ class Cut extends Operations {
     }
     return res
   }
+
+  
   
 }
 
@@ -300,6 +374,7 @@ class Cut extends Operations {
 class Sort extends Operations {
   constructor({...o}, p5, L, B) {
     super(o, p5, L, B)
+    this.opId = o.opId ? o.opId : newId("opSort")
 
   }
 
@@ -307,23 +382,53 @@ class Sort extends Operations {
   setParameters() {
 
     //player sets parameters
+    console.log("sort parameters", this.parameters)
+    let {prop, operator, value} = this.parameters
 
     this.parameters.condProp = "b"
-    this.parameters.condOperatior = "<"
+    this.parameters.condOperator = "<"
     this.parameters.condValue = "10"
 
+  }
+
+  parameterDisplay() {
+    if(!this.parameters.condProp) {
+      return "Välj vilkor"
+    }
+
+    let type
+    if(this.parameters.condProp=="b") {
+      type="bredden"
+    } else if(this.parameters.condProp=="l") {
+      type="längden"
+    } else if(this.parameters.condProp=="l") {
+      type="köplatsen"
+    }
+
+    let operator = this.parameters.condOperator=="!="? ["≠"] : this.parameters.condOperator
+
+    let string = `Är [${type}] [${operator}] [${this.parameters.condValue}]`
+    
+    return string
   }
 
   //used for all subclasses of oberations
   executeOp()  {
     this.setParameters()
     let status
+
+    //controls that parameters are set
+    let {prop, operator, value} = this.parameters
+    if(!prop, !operator, (!value && value!=0)) {
+      status = false
+      return status
+    }
     
     this.toDoMatList.forEach(item=>{
       let res = this.action(this.parameters, item)
 
       if(this.portIn.passedMatList.find(m=>m.uniqueKey==item.uniqueKey)) {
-        console.log("mat have been processed and was ignored", item)
+        // console.log("mat have been processed and was ignored", item)
         return
       }
 
@@ -350,7 +455,7 @@ class Sort extends Operations {
         this.portIn.passedMatList.push(item)
         status = true
       } else {
-        console.log("cant process: " + item)
+        // console.log("cant process: " + item)
         status =  false
       }
 
@@ -387,11 +492,7 @@ class Sort extends Operations {
 
 
 
-//condition
-
 //muda
-
-//create Module
 
 //create product
 

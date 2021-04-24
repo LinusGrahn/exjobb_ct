@@ -1,3 +1,4 @@
+
 //Class shape
 class Shape {
   constructor({...pos}, mech, p5, L, B) {
@@ -31,11 +32,15 @@ class Shape {
     this.selected = false
     this.moving = false //Boolean to determen if ent should be effected by drag event
     this.droppable = true
+    this.openDOM = false
 
     this.style = this.L.skin.elem
     this.typo = this.L.skin.typography
 
     this.portList = []
+
+    //set in subClass
+    this.DOM_mechInterface = null
 
     this.L.shapes.push(this)
   }
@@ -161,13 +166,22 @@ class Shape {
 
   // triggered if the shape is clicked
   clicked() {
+    console.log("sets the global removeDom to false")
+    removeDom = false
+
 
     this.selected = true
-    console.log("selected")
+    // this.selected = false
+    console.log("show me info about this shape, remain selected?")
+    if(!this.openDOM) {
+      this.DOM_mechInterface.display()
+      this.openDOM = true
+    }
   }
 
   // triggered if the shape is dragged
   moved(x,y) {
+    this.selected = true
     //updates positon of this and checks if it is droppable
     this.updatePos(x,y,false)
 
@@ -187,12 +201,8 @@ class Shape {
     this.selected = false
   }
 
-  //triggered when clicked and not dragged
-  mechInfo() {
-    this.selected = false
-    console.log("show me info about this shape, remain selected?")
-    console.log(this)
-  }
+
+
 
 
   //displays/draws the shape on the canvas and apply style
@@ -212,6 +222,10 @@ class Shape {
     this.p.push()
 
     //boundy
+    // this.p.drawingContext.shadowOffsetX = 2;
+    // this.p.drawingContext.shadowOffsetY = 2;
+    // this.p.drawingContext.shadowBlur = 5;
+    // this.p.drawingContext.shadowColor = 'black';
     this.p.fill(bFill)
     this.p.noStroke()
     this.p.rect(this.bdryX, this.bdryY, this.bdryW, this.bdryH)
@@ -239,6 +253,7 @@ class OpShape extends Shape {
     let {...o} = this.mech.details
 
     this.icon = this.L.assets.loadedIcons.find(item=>item.name==o.icon).icon
+    this.iconPath = this.L.assets.iconList.find(item=>item.name==o.icon).path
     this.name = o.name
     this.description = o.description 
     this.parameterStatus = o.parameterStatus
@@ -255,6 +270,13 @@ class OpShape extends Shape {
     this.portList = this.createPortShapes(this.B.gridSize)
 
     this.colors = this.L.skin.pallet
+
+
+    //parameters for what opType
+    // detail existing in this shapeObj
+    let domPos = B.canvasToScreenCoordConverter(10,10)
+    this.DOM_mechInterface = new MechDOMShape(domPos, this, this.mech, this.p, this.L, this.B)
+
   }
 
 
@@ -266,13 +288,60 @@ class OpShape extends Shape {
     this.p.noStroke()
     this.p.image(this.icon, this.x+s*.5, this.y+s*.5, s*7, s*7)
 
+    
+
+    this.p.textSize(this.L.skin.typography.textSize)
+    this.p.textFont(this.L.assets.fonts.breadFont)
+
     this.p.fill(this.colors.c2)
 
-    this.p.textSize(12)
-    
-    this.p.text(this.parameterStatus, this.x+s*8, this.y+s*2.5, s*6, s*4)
- 
+    this.p.push() 
 
+    let text = this.mech.parameterDisplay().split(" ").map(item=>{
+      if(item.startsWith("[")) {
+        return {style: "marked", str: item.substr(1, item.length-2)}
+      } else {
+        return {style: "normal", str: item}
+      }
+    })
+    // console.log(text)
+
+    
+
+    let prevMarkedI = 0
+    let lines = 1
+    text.forEach((item, i, a)=>{
+      let yt = this.y+(this.L.skin.typography.textSize+5)*(lines)+s*1
+      //if next is marked concat all before last marked
+      let flag = i!=a.length-1? a[i+1].style == "marked" : true
+      if(item.style == "marked") {
+        prevMarkedI = i
+        
+        this.p.fill(this.colors.c3)
+        this.p.rect(this.x+s*8.8, yt-this.L.skin.typography.textSize-3, s*5, this.L.skin.typography.textSize+7)
+        this.p.fill(this.colors.c2)
+        this.p.textSize(this.L.skin.typography.textSize+4)
+        this.p.text(item.str, this.x+s*9, yt)
+        lines++
+
+
+      } else if(flag){
+        let length = i+1-prevMarkedI 
+        let str = ""
+        for(let j=prevMarkedI; j<length; j++) {
+          str += a[prevMarkedI+j].str + " "
+        }
+        this.p.fill(this.colors.c2)
+        this.p.textSize(this.L.skin.typography.textSize)
+        this.p.text(str, this.x+s*9, yt)
+        lines++
+      }
+      
+    })
+    // this.p.text(, this.x+s*8, this.y+s*2.5, s*6, s*4)
+    
+    
+    this.p.pop()
     this.p.textSize(14)
 
     //creates output Labels
@@ -537,17 +606,6 @@ class Port {
     let s = this.size/2
     let fill = this.open ? this.style.openCol : this.style.closedCol
 
-    this.p.push() 
-    this.p.fill(fill)
-
-    this.p.translate(this.cX, this.cY)
-    this.p.rotate(this.rot)
-    this.p.triangle(-s, 0, 0, -s, s, 0)
-    // this.p.triangle(this.cX-s, this.cY, this.cX, this.cY-s, this.cX+s, this.cY)
-
-    
-    this.p.pop()
-    
     if(this.connection) {
       // console.log("-------------------- FUNCTION RUN: port.disply - if port.connection == true-------------------")
 
@@ -567,6 +625,20 @@ class Port {
       }
 
     }
+
+    this.p.push() 
+    this.p.fill(fill)
+    this.p.noStroke()
+
+    this.p.translate(this.cX, this.cY)
+    this.p.rotate(this.rot)
+    this.p.triangle(-s, 0, 0, -s, s, 0)
+    // this.p.triangle(this.cX-s, this.cY, this.cX, this.cY-s, this.cX+s, this.cY)
+
+    
+    this.p.pop()
+    
+    
   }
 }
 
@@ -653,7 +725,7 @@ class Connection {
     this.startPort.disconnectTwoPorts(this.endPort)
     
     //redraw ot update
-    // this.L.updateGameState()
+    this.L.updateGameState()
   }
 
   calcPath() {
@@ -833,9 +905,15 @@ class Connection {
 
     // this.p.line(this.sX, this.sY, this.eX, this.eY)
 
+    this.p.drawingContext.shadowOffsetX = 5;
+    this.p.drawingContext.shadowOffsetY = 5;
+    this.p.drawingContext.shadowBlur = 9;
+    this.p.drawingContext.shadowColor = 'rgb(115, 70, 26)';
+    
     this.p.beginShape()
     this.pathArr = this.calcPath()
     this.pathArr.forEach(item=>{
+      
       this.p.vertex(item.x, item.y)
     })
     this.p.endShape()

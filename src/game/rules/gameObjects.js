@@ -44,8 +44,6 @@ let testOp = ()=>{
   return a
 }
 
-
-
 let gameBoard = {
   w: 2400,
   h: 2400,

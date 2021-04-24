@@ -14,7 +14,7 @@ const skin = {
 
   typography: {
     //textsizes
-    textSize: 14,
+    textSize: 18,
     hSml: 24,
 
 
@@ -30,7 +30,7 @@ const skin = {
   // },
 
   elem: {
-    bdryFill: "rgba(67,85,94,.2)",
+    bdryFill: "rgba(67,85,94,.1)",
     elemFill: pallet.c1,
     ok_bdryFill: "rgba(0,180,10,0.10)",
     ok_elemFill: "rgba(0,180,10,0.80)",
@@ -46,14 +46,14 @@ const skin = {
   },
 
   port: {
-    closedCol: "blue",
-    openCol: "orange"
+    closedCol: "rgb(204, 136, 69)",
+    openCol: pallet.c2
   },
 
   connection: {
-    col: "purple",
+    col: "rgb(204, 136, 69)",
     err_col: "red",
-    strokeWeigth: 3
+    strokeWeigth: 4
   }
 
   
