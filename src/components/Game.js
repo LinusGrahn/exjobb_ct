@@ -9,8 +9,9 @@ const Game = (props) => {
   console.log(participant)
   
   
+//  window.postMessage(JSON.stringify(participant), document.querySelector("#gameFrame").contentWindow)
   
-  
+ 
   
   
   
@@ -20,7 +21,7 @@ const Game = (props) => {
   return (
     <div>
       {participant.fingerPrint ? 
-        <iframe title="game" type="html" src="http://localhost:8888/exjobb_ct/src/game/play_game.html" width={window.innerWidth} height={window.innerHeight}></iframe>
+        <iframe title="game" id="gameFrame" type="html" src="http://localhost:8888/exjobb_ct/src/game/play_game.html" width={window.innerWidth} height={window.innerHeight}></iframe>
       : <div>waiting for par</div>}
     </div>
   )

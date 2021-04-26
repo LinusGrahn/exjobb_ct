@@ -488,3 +488,5 @@ function calcPath() {
 //nice to fix that connections dosn't connect along shape-borders
 //add diagonals and larer steps.
 
+
+

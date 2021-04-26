@@ -1,11 +1,11 @@
 class Board {
   constructor({...o}, p5) {
     this.p = p5
-    this.zF = .6;  // zoom factor
+    this.zF = .48;  // zoom factor
     this.zFDef = this.zF
-    this.zSpeend = .01; //speed of zooming
+    this.zSpeend = .03; //speed of zooming
     this.x = this.p.windowWidth/2; // defines origin x
-    this.y= this.p.windowHeight/2; // defines origin y
+    this.y = this.p.windowHeight*.65; // defines origin y
     // min/max values for the board boarders
     this.minX= o.w/2*-1;
     this.minY= o.h/2*-1; 
@@ -13,7 +13,7 @@ class Board {
     this.maxY= o.h/2;
     this.movingBoard = false; // controles if drag event should move the board
     this.gridSize = o.gridSize; // size of each cell in the grid. board min, max diveded by gridSize should equal an intiger.
-    
+    this.toolMenuPos = o.toolMenuPos ? o.toolMenuPos : {x:10, y:10, h:550, w:150, posSetting: "topLeft" }
 
   }
 
@@ -46,9 +46,9 @@ class Board {
   }
   
   // orientation meethods
-  centerBoard() {
+  startBoard() {
     this.x = this.p.windowWidth/2, 
-    this.y = this.p.windowHeight/2
+    this.y = this.p.windowHeight*.65
     // this.zF = this.zFDef
     this.zF = .5
     this.p.redraw()
@@ -62,7 +62,6 @@ class Board {
   pointToPxl(v) {
     return v*this.zF
   }
-
 
   //converts the pos on canvas to board position
   canvasToboardCoordCoverter(x,y) {
@@ -169,10 +168,12 @@ class Game {
     this.stateReps = o.stateReps ? o.stateReps.map(item=>new StateRep(item,this.p, this, this.B)) : []
     // this.states
     this.domElems = o.domElems ? o.domElems : []
+    this.product = o.product ? o.product : []
     
     this.gameId = o.gameId ? o.gameId : newId("game")
     this.unitSize = 5
 
+    this.matListOnCanvas = []
 
     this.moduleList = this.getModuleList()
 
@@ -227,7 +228,10 @@ class Game {
       SRUpdates.push(item.updateStateRepPorts())
     });
 
-    let trigUp = [...opUpdates, ...SRUpdates].find(item=>item.res)
+    let trigUp = [...opUpdates, ...SRUpdates].find(item=>{
+      console.log(item)
+      item.res
+    })
     // console.log("triggerUpdate?:", Boolean(trigUp), trigUp)
 
     if(+this.retriggerUpdate>100) {
@@ -292,12 +296,13 @@ class Game {
     stateRepOut.disconnectPort("portOut", false)
     
     if(mechIn.id.startsWith("op")) {
-      mechIn.disconnectPortIn()
+      mechIn.disconnectPortIn(stateRepOut)
     } else {
       console.log("SR inB remove")
       mechIn.disconnectPort("portInB", stateRepOut)
     }
     
   }
+
 
 }

@@ -15,7 +15,7 @@ const skin = {
   typography: {
     //textsizes
     textSize: 18,
-    hSml: 24,
+    hSml: 22,
 
 
     col: pallet.c1,

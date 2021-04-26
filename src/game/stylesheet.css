@@ -19,7 +19,7 @@
   /* // terracotta */
   --c3: rgb(164,124,93); 
   /* strokeColor + skrokw width == border color  */
-  --stroke: 1px solid black; 
+  --stroke: 1px solid var(--c2); 
   --fontSize: 16px;
   
   --c1T: rgba(68,85,93,.3); 
@@ -63,7 +63,7 @@ canvas {
 }
 
 .flex, .block, .gallery, .flexCenter {
-  margin: 0 0 10px;
+  margin: 0 10px 20px 0;
 }
 
 .flex {
@@ -75,9 +75,9 @@ canvas {
   justify-content: center;
 }
 
-.block {
+/* .block {
   
-}
+} */
 
 .gallery {
   display: flex;
@@ -111,7 +111,7 @@ canvas {
   color: var(--c1);
   border-radius: var(--corner);
   padding: 10px;
-  margin: 0;
+  margin: 5px, 0, 0;
 }
 
 .button {
@@ -140,6 +140,10 @@ canvas {
 
 }
 
+.flex > .sliderValue {
+  width: 20%;
+}
+
 .sliderValue {
   background-color: var(--c2);
   color: var(--c1);
@@ -150,7 +154,6 @@ canvas {
   border-radius: var(--corner);
   font-family: "breadFont";
   font-size: var(--fontSize);
-  width: 20%
 }
 
 .selected {
@@ -170,3 +173,14 @@ canvas {
   top: 10px;
   border-radius: 50%;
 }
+
+#matDisplayContainer {
+  width: 90%;
+  height: 500px;
+  margin: 5% 5%;
+  border: var(--stroke);
+  border-radius: var(--corner);
+}
+
+
+

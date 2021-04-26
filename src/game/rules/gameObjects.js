@@ -50,6 +50,7 @@ let gameBoard = {
   gridSize: 25,
 }
 
+const startY = (gameBoard.w/2 -100) * -1
 
 //used to load a game or creat a new game.
 let gameA = {
@@ -87,21 +88,21 @@ let newGame = {
       portInA: "closed",
       portInB: [],
       portOut: [],
-      pos: {x: -325, y: -350}
+      pos: {x: -150, y: startY}
     },
     {id: newId("stateRep"),
       matList: [startMat[1]],
       portInA: "closed",
       portInB: [],
       portOut: [],
-      pos: {x: -25, y: -350}
+      pos: {x: 100, y: startY}
     },
     {id: newId("stateRep"),
       matList: [startMat[2]],
       portInA: "closed",
       portInB: [],
       portOut: [],
-      pos: {x: 275, y: -350}
+      pos: {x: 350, y: startY}
     },
   ],
 

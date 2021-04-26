@@ -1,6 +1,5 @@
 'use strict'
 
-
 const game = (p, gameType, assets) => {
   //used to se the order of execution
   let eFlowArr = []
@@ -18,6 +17,7 @@ const game = (p, gameType, assets) => {
   p.setup = function() {
     let canvas = p.createCanvas(p.windowWidth, p.windowHeight);
     canvas.parent("gameCanvas")
+    
 
     //1 create game and board
     //create board and game (using function parameters B, L etc. as functionScope variables insted of making them global)
@@ -25,54 +25,23 @@ const game = (p, gameType, assets) => {
     console.log(gameType)
     let L = new Game(gameType, p, B, assets)
 
-    //2 add StartMaterial and display CHallenge
-    //  (Show stateRep)
-    // (show challenge)
-    // place Evaluate
-    // create tool menu
-    
 
-    //3 game started - 
-    //placing a operattion on board (unconnected)
     //[happens in op tool object]
-    opCut.pos = {x: -275, y: 0}
-    opSort.pos = {x: 150, y: 0}
-    L.operations.push(new Cut(opCut, p, L, B), new Sort(opSort, p, L, B)) // placing a cut operation on board
+    opCut.pos = {x: -275, y: -400}
+    opSort.pos = {x: 150, y: -400}
+    opBuild.pos = {x: -50, y: 500}
+    opMuda.pos = {x: 200, y:100}
+    new Cut(opCut, p, L, B)
+    new Sort(opSort, p, L, B) 
+    new Build(opBuild, p, L, B) 
+    
+    new Muda(opMuda, p, L, B) // placing a cut operation on board
 
-
-
-
-    // L.updateGameState()
-
-
-    //should be a global update function 
-
+    L.toolMenu = new ToolMenu(B.toolMenuPos, p, L, B)
+    // L.toolMenu.setToolMenuPos("topLeft")
 
     console.log(L.stateReps)
     console.log(L.operations[0])
-
-    
-    //---> check inputB of "stateA" - create a loop feedback!
-
-    //---> create condition
-
-    //--> module
-
-    //--> product
-
-    //--> (spill)
-
-    //--> graphic representaton of material (drawing functioon)
-    
-    //check whole flow
-
-
-    //apply shapes and interaction.
-
-
-
-
-
 
 
     //global variables for Dev and Debugging
@@ -82,6 +51,7 @@ const game = (p, gameType, assets) => {
     window.removeDom = false
     window.zoom = false
     window.eTimer = null
+    window.dev = true
 
 
     
@@ -94,6 +64,7 @@ const game = (p, gameType, assets) => {
   }
   
   p.draw = function() {
+    p.clear()
     // console.log("challenge is -->", L.challenge)
     //createe background
     p.background(L.skin.pallet.c3)
@@ -129,8 +100,10 @@ const game = (p, gameType, assets) => {
     
 
     //Toolbar and object unefected by orientation and zoom
-    p.rect(30,30,100,100)
     
+    if(L.toolMenu.visible && !B.movingBoard ) {
+      L.toolMenu.display()
+    }
 
     // let pos = B.boardToScreenCoordConverter(0,0)
     
@@ -148,6 +121,10 @@ const game = (p, gameType, assets) => {
       // L.operations[0].shape.DOM_mechInterface.display()
     }
     
+    if(L.matListOnCanvas.length) {
+      L.matListOnCanvas.map(m=>m.display())
+    }
+
   }
   
 
@@ -163,6 +140,10 @@ const game = (p, gameType, assets) => {
     console.log(e.target)
 
     if(e.target.localName == "canvas" || e.target.className.includes("closeButton")) {
+      if(L.domElems.length) {
+        L.domElems.forEach(item=>item.removeElem())
+      }
+
       console.log("canvas")
       window.dom = false
       removeDom = true
@@ -181,6 +162,32 @@ const game = (p, gameType, assets) => {
 
     //start looping for the canvas to redraw.
     p.loop()
+
+    //if toolbar have been clicked
+    if(L.toolMenu.posInsideShape(p.mouseX, p.mouseY)) {
+      console.log("toolbar clicked")
+      L.toolMenu.targeted = true
+
+      window.target = L.toolMenu.menuItems.find(item=>{
+        return item.posInsideShape(p.mouseX, p.mouseY)
+      })
+
+      // console.log(window.target, p.mouseX, p.mouseY)
+      if(window.target) {
+        window.eTimer = setTimeout(()=>{
+          window.target.moving = true
+        }, 200)
+
+      } else {
+        window.target = null
+      }
+
+
+      window.port = null
+      return false
+    }
+
+
 
     let mechArr = [...L.stateReps, ...L.operations]
     let port = null
@@ -238,6 +245,26 @@ const game = (p, gameType, assets) => {
       removeDom = true
     }
 
+    if(L.toolMenu.targeted) {
+      console.log("menu targeted")
+
+      if(target) {
+        console.log(target)
+        if(target.moving) {
+          target.dropped()
+        } else {
+          clearTimeout(eTimer)
+          target.clicked()
+        }
+
+      }
+
+      L.toolMenu.targeted = false
+      p.noLoop()
+      window.target = null
+      return false
+    }
+
     eTimer ? clearTimeout(eTimer) : {} 
 
     if(port) {
@@ -246,13 +273,13 @@ const game = (p, gameType, assets) => {
       let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
       
       let endPort = L.ports.find(item=>item.legalConnection(x,y, port))
-      
+      console.log(endPort)
       //if endPort is true the endport object have been passed there and connection is legal
       if(endPort) {
         port.connection.attachToPort(endPort)
         let check = L.connectMechs(port.mech, endPort.mech)
         !check ? console.log("did mechs failed to connect?", port.mech, endPort.mech) : {}
-      } else  if(!port.open && (port.portName == "portIn" || port.portName == "portOut") ){
+      } else if(!port.open && (port.portName == "portIn" || port.portName == "portOut") ){
         //if a closed OP_portIn or a closed SR_portOut is clicked)
         port.connection.detachPorts()
       } else if (port.open){
@@ -300,6 +327,14 @@ const game = (p, gameType, assets) => {
     } else {
       removeDom = true
     }
+
+    if(L.toolMenu.targeted) {
+      if(target.moving) {
+        target = target.updatePos(p.mouseX, p.mouseY)
+        // console.log(target)
+      }
+    }
+
     // console.log("x-move", e.movementX)
     // console.log("y-move",e.movementY)
   

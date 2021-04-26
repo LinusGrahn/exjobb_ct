@@ -24,13 +24,17 @@ class Material {
     //lowest nr is first in stateRep.matList queue
     this.queue = this.prevMat.length + 1
     
+    
     this.fromMechId = o.fromMechId ? o.fromMechId : "startMat"
     this.curMechId = o.curMechId ? o.curMechId : null
+    this.sRqueue = o.sRqueue ? o.sRqueue : null
     //are these necesary?
     // this.prevOp = o.prevOp ? o.prevOp : null
     // this.nextOp = o.nextOp ? o.nextOp : null
 
     this.matDisplay = null //contains a matDisplay object
+    this.displayFront = null //containt product from front
+    this.displaySide = null // contain product from side
 
     // this.compositionProps = o.compositionProps
     // this.evalueate = null
@@ -54,9 +58,10 @@ class StateRep {
     this.p = p5
     this.L = L
     this.B = B
-    this.matList = o.matList ? o.matList.map(item=>{
+    this.matList = o.matList ? o.matList.map((item, i)=>{
       let newItem = {...item}
       newItem.curMechId = this.id
+      newItem.sRqueue = i+1
       return new Material(newItem, this.p, this.L, this.B)
     }) : [] //list of materials contained in stateRep
     //#new Material
@@ -102,6 +107,7 @@ class StateRep {
 
       
       mat.forEach(item=>{
+        item.sRqueue=this.matList.length + 1
         this.matList.push(item)
         this.L.materials.push(item)
 
@@ -187,6 +193,7 @@ class StateRep {
       // console.log("matToRemove",oldMatToremove.map(i=>i.id.substr(-4) + "----uKey: "+ i.uniqueKey.substr(-4)))
       // console.log("this.matlist before", this.matList.map(i=>i.id.substr(-4) + "----uKey: "+ i.uniqueKey.substr(-4)))
       this.matList = [...newMatFromInB, ...matFromInA, ...oldMatToKeep].sort((a,b)=>a.queue-b.queue)
+      this.matList.forEach((m, i)=>{m.sRqueue=i+1})
       // console.log("this.matlist after", this.matList.map(i=>i.id.substr(-4) + "----uKey: "+ i.uniqueKey.substr(-4)))
 
     } else {
@@ -312,7 +319,7 @@ class MaterialDisplay {
     this.w = size.w
     this.depth = this.L.unitSize
     this.padding = 4
-    
+    this.originalX = size.x
     
     //gridcells and prps
     //one cellsize is 5cm (defined in L.unitSize)
@@ -523,8 +530,18 @@ class MaterialDisplay {
     
   }
 
-  display() {
+  display(size) {
     this.p.push()
+    if(size) {
+      console.log(size/this.bdryW, this.originalX, this.x, this.bdryX)
+      this.p.scale(size/this.bdryW)
+      let offset = this.bdryX-this.originalX
+      if(offset) {
+        this.x = this.x - offset
+        this.bdryX = this.bdryX - offset
+      }
+
+    }
 
     //bdry
     this.p.noStroke()
@@ -557,4 +574,155 @@ class MaterialDisplay {
 
   }
 
+}
+
+
+class DisplayMatsOnCanvas {
+  constructor({...pos},[...matList], p5, L, B) {
+    this.p = p5
+    this.L = L
+    this.B = B
+    
+    this.matList = matList
+    let {x,y} = pos 
+    this.x = x
+    this.y = y
+    this.corners = 15
+
+    //angle?
+
+    console.log(this)
+
+  }
+  
+  display() {
+    console.log(this)
+    this.p.push()
+
+    this.p.fill(this.L.skin.pallet.c1)
+    this.p.stroke(this.L.skin.pallet.c2)
+    this.p.drawingContext.shadowOffsetX = 3;
+    this.p.drawingContext.shadowOffsetY = 3;
+    this.p.drawingContext.shadowBlur = 11;
+    this.p.drawingContext.shadowColor = 'rgba(43, 42, 40, 0.6)';
+
+    let a = this.p.rect(this.x, this.y, this.p.windowWidth-32, 400, this.corners)
+    console.log(a)
+    this.p.pop()
+    
+    this.p.push()
+    this.p.translate(this.x+10, this.y+10)
+
+    this.matList.forEach((mat, i)=>{
+      console.log(mat)
+      let angle = mat.id.startsWith("wood") ? "front" : "profile"
+      let size = {
+        xB: 0,
+        yB: 0,
+        wB: 120,
+        x: 10,
+        y: 10,
+        w: 100
+      }
+      let md = new MaterialDisplay(size, mat, angle, this.p, this.B, this.L)
+      console.log(md)      
+      md.display(size.w)
+      
+      this.p.push()
+      this.p.stroke(this.L.skin.pallet.c2)
+      this.p.strokeWeight(2)
+      this.p.noFill()
+      this.p.rect(size.xB, size.yB, size.wB, size.wB, 10)
+      this.p.fill(this.L.skin.pallet.c1)
+      
+      this.p.fill(this.L.skin.pallet.c2)
+      this.p.stroke(this.L.skin.pallet.c3)
+      this.p.strokeWeight(2)
+      this.p.rect(size.xB+(size.wB-30), size.yB-5, 35, 35, 50)
+      this.p.noStroke()
+      this.p.textSize(this.L.skin.typography.textSize)
+      this.p.textFont(this.L.assets.fonts.breadFont)
+      this.p.fill(this.L.skin.pallet.c1)
+      this.p.textAlign(this.p.CENTER, this.p.CENTER)
+      this.p.text(i+1, size.xB+(size.wB-17), size.yB+9)
+      
+      this.p.pop()
+      
+      this.p.translate(135, 0)
+
+    })
+
+
+
+
+    this.p.pop()
+
+    // this.p.redraw()
+  }
+  
+}
+
+
+class displayProductAndChallenge {
+  constructor({...pos},challenge, product, p5, L, B) {
+    this.p = p5
+    this.L = L
+    this.B = B
+    
+    this.matList = matList
+    let {x,y} = pos 
+    this.x = x
+    this.y = y
+    this.corners = 15
+
+    //angle?
+
+    console.log(this)
+
+  }
+
+  display() {
+    // this.p.push()
+
+    // this.p.fill(L.skin.typography.col2)
+    // this.p.textSize(L.skin.typography.hSml)
+    // this.p.textFont(L.assets.fonts.headFont)
+    // this.p.text("Produkt &", 13, y+30)
+    // this.p.text("utmaning", 13, y+53)
+    
+    // this.p.fill(L.skin.pallet.c1)
+    // this.p.rect(7, y+70, this.w-14, this.w-14, 10)
+
+    // this.p.pop()
+
+
+    this.p.translate(this.x+10, this.y+10)
+
+
+
+
+    this.p.push()
+      this.p.stroke(this.L.skin.pallet.c2)
+      this.p.strokeWeight(2)
+      this.p.noFill()
+
+      this.p.rect(size.xB, size.yB, size.wB, size.wB, 10)
+      this.p.fill(this.L.skin.pallet.c1)
+      
+      this.p.fill(this.L.skin.pallet.c2)
+      this.p.stroke(this.L.skin.pallet.c3)
+      this.p.strokeWeight(2)
+
+      this.p.rect(size.xB+(size.wB-30), size.yB-5, 35, 35, 50)
+
+      this.p.noStroke()
+      this.p.textSize(this.L.skin.typography.textSize)
+      this.p.textFont(this.L.assets.fonts.breadFont)
+      this.p.fill(this.L.skin.pallet.c1)
+      this.p.textAlign(this.p.CENTER, this.p.CENTER)
+
+      this.p.text(i+1, size.xB+(size.wB-17), size.yB+9)
+      
+      this.p.pop()
+  }
 }

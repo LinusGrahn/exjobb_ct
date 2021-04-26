@@ -15,10 +15,11 @@ class Shape {
     this.shape = "rect"
     this.corners = 15
 
-    let {x,y} = this.cPosToDPos(pos.x,pos.y)
+    let {x,y} = !pos.snap ? this.cPosToDPos(pos.x,pos.y) : pos
     this.x = x
     this.y = y
 
+    this.drawBdry = true
     this.bdryX = this.x - this.B.gridSize
     this.bdryY = this.y - this.B.gridSize
     this.bdryW = this.w + this.B.gridSize * 2
@@ -37,6 +38,10 @@ class Shape {
     this.style = this.L.skin.elem
     this.typo = this.L.skin.typography
 
+    this.bdryFill = this.style.bdryFill
+    this.elemFill = this.style.elemFill
+    this.elemStroke = false
+
     this.portList = []
 
     //set in subClass
@@ -54,27 +59,62 @@ class Shape {
     this.bdryX = this.x - this.B.gridSize
     this.bdryY = this.y - this.B.gridSize
 
+    if(this.mech.id) {
+      if(this.mech.id.startsWith("op")) {
+        if(this.mech.portOutA != "closed") {
+          let a = this.mech.portOutA.shape
+          let b = this.mech.portOutB.shape
+          let difAX = a.prevX-this.prevX
+          let difAY = a.prevY-this.prevY
+          let difBX = b.prevX-this.prevX
+          let difBY = b.prevY-this.prevY
+   
+          a.updatePos(nX+difAX, nY+difAY, updPrev)
+          b.updatePos(nX+difBX, nY+difBY, updPrev)
+          
+        }
+      }
+
+    }
 
     if(updPrev) {
       this.prevX = this.x + this.w/2
       this.prevY = this.y + this.h/2 
     }
 
+    //if this is moving check for collision with other elements and set this.droppable
     if(this.moving) {
       let mechArr = [...this.L.stateReps, ...this.L.operations]
   
-      this.droppable = !Boolean(mechArr.find(item=>{
+      //to account for ops with statereps
+      let flag = this.mech.id.startsWith("op") && this.mech.portOutA!="closed"
+      // console.log("flag", flag)
+      let x1 = !flag ? this.bdryX : this.bdryX-this.B.gridSize*3
+      let y1 = this.bdryY
+      let x2 = !flag ? this.bdryX+this.bdryW : this.bdryX+this.bdryW+this.B.gridSize*3
+      let y2 = !flag ? this.bdryY+this.bdryH : this.bdryY+this.bdryH+this.B.gridSize*8
+      let stateRepIds
 
+      if(flag) {
+        stateRepIds = [this.mech.portOutA.id, this.mech.portOutB.id]
+        // console.log(stateRepIds)
+      }
+
+      this.droppable = !Boolean(mechArr.find(item=>{
         let res
-        if(item.shape.mech != this.mech) {
-          res = item.shape.areaInsideBdry(this.bdryX, this.bdryY, this.bdryX+this.bdryW, this.bdryY+this.bdryH)
+        let id = item.shape.mech.id 
+        if(id != this.mech.id && !stateRepIds.find(el=>el==id)) {
+          res = item.shape.areaInsideBdry(x1, y1, x2, y2)
         } else {
           res = false
         }
+        res ? console.log(item) : {}
         return res
 
       }))
     }
+    
+    
 
 
     this.portList.forEach(item=>{
@@ -99,14 +139,18 @@ class Shape {
 
   //checks if an area is inside bdrys
   areaInsideBdry(x1,y1,x2,y2) {
+    
     let bx1 = this.bdryX
     let by1 = this.bdryY
-    let bx2 = this.bdryX+this.bdryW
+    let bx2 = this.bdryX+this.bdryW+this.B.gridSize
     let by2 = this.bdryY+this.bdryH
 
     // console.log("bool",
     //   (x1 >= bx1 && x1 < bx2),(x2 <= bx2 && x2 > bx1),
     //   (y1 >= by1 && y1 < by2),(y2 <= by2 && y2 > by1)
+    // )
+    // console.log(
+    //   y1, ">=", by1, "&&", y1, "<", by2, "||", y2, "<=", by2, "&&", y2, ">", by1,
     // )
 
     let bool = ((x1 >= bx1 && x1 < bx2) || (x2 <= bx2 && x2 > bx1)) && ((y1 >= by1 && y1 < by2) || (y2 <= by2 && y2 > by1))
@@ -133,19 +177,18 @@ class Shape {
   createPortShapes(size) {
     // console.log("-------------------- FUNCTION RUN: createPortShape -------------------")
     let portArr = Object.keys(this.mech).filter(item=>item.startsWith("portIn") || item.startsWith("portOut"))
-    
     portArr = portArr.map(item=>{
       //only create ports that aren't "closed"
       if(this.mech[item] != "closed") {
-        //if shape.mech is op ports are objects, but arrays when stateReps
+        //if shape.mech is op, ports are objects, but arrays when stateReps
         // console.log("port:", item, "was created in", this.mech.id, "and port contains ", this.mech[item])
         let open
         if(this.mech.id.startsWith("op")) {
           open = this.mech[item] ? false : true
-        } else {
+        } else if (!this.mech.build){
           open = !this.mech[item].length ? true : item == "portInB" ? true : false
 
-        }
+        } 
 
         let portAttr = {
           open: open,
@@ -182,6 +225,7 @@ class Shape {
   // triggered if the shape is dragged
   moved(x,y) {
     this.selected = true
+    this.L.toolMenu.visible = false
     //updates positon of this and checks if it is droppable
     this.updatePos(x,y,false)
 
@@ -199,6 +243,7 @@ class Shape {
 
     this.moving = false
     this.selected = false
+    this.L.toolMenu.visible = true
   }
 
 
@@ -207,8 +252,8 @@ class Shape {
 
   //displays/draws the shape on the canvas and apply style
   display() { 
-    let bFill = this.style.bdryFill
-    let sFill = this.style.elemFill
+    let bFill = this.bdryFill
+    let sFill = this.elemFill
     
     if(this.moving && this.droppable) {
       bFill = this.style.ok_bdryFill
@@ -226,15 +271,26 @@ class Shape {
     // this.p.drawingContext.shadowOffsetY = 2;
     // this.p.drawingContext.shadowBlur = 5;
     // this.p.drawingContext.shadowColor = 'black';
-    this.p.fill(bFill)
-    this.p.noStroke()
-    this.p.rect(this.bdryX, this.bdryY, this.bdryW, this.bdryH)
+    if(this.drawBdry) {
+      this.p.noStroke()
+      this.p.fill(bFill)
+      this.p.rect(this.bdryX, this.bdryY, this.bdryW, this.bdryH)
+    }
+    
+    if(this.stroke) {
+      this.p.stroke(this.stroke)
+    } else {
+      this.p.noStroke()
+
+    }
 
     this.p.textSize(18)
     this.p.fill(this.typo.col2)
-    let id = this.mech.id
-    id = id.substr(0, id.indexOf("_")+1) + id.substr(-4)
-    this.p.text(id, this.bdryX, this.bdryY, this.bdryW, this.B.gridSize*2)
+    if(this.mech.id && dev) {
+      let id = this.mech.id
+      id = id.substr(0, id.indexOf("_")+1) + id.substr(-4)
+      this.p.text(id, this.bdryX, this.bdryY, this.bdryW, this.B.gridSize*2)
+    }
 
     this.p.fill(sFill)
     this.p[this.shape](this.x, this.y, this.w, this.h, this.corners)
@@ -259,14 +315,12 @@ class OpShape extends Shape {
     this.parameterStatus = o.parameterStatus
     this.inLabels = o.inLabels
     this.outLabels = o.outLabels
-    
     this.w = this.B.gridSize*8
     this.h = this.B.gridSize*5
     this.bdryW = this.w + this.B.gridSize * 2
     this.bdryH = this.h + this.B.gridSize * 2
 
     // this.updatePos()
-
     this.portList = this.createPortShapes(this.B.gridSize)
 
     this.colors = this.L.skin.pallet
@@ -295,53 +349,57 @@ class OpShape extends Shape {
 
     this.p.fill(this.colors.c2)
 
-    this.p.push() 
+    
 
-    let text = this.mech.parameterDisplay().split(" ").map(item=>{
-      if(item.startsWith("[")) {
-        return {style: "marked", str: item.substr(1, item.length-2)}
-      } else {
-        return {style: "normal", str: item}
-      }
-    })
+    if(!this.mech.opId.startsWith("opBuild")) {
+      this.p.push() 
+      let text = this.mech.parameterDisplay().split(" ").map(item=>{
+        if(item.startsWith("[")) {
+          return {style: "marked", str: item.substr(1, item.length-2)}
+        } else {
+          return {style: "normal", str: item}
+        }
+      })
+
+      let prevMarkedI = 0
+      let lines = 1
+      text.forEach((item, i, a)=>{
+        let yt = this.y+(this.L.skin.typography.textSize+5)*(lines)+s*1
+        //if next is marked concat all before last marked
+        let flag = i!=a.length-1? a[i+1].style == "marked" : true
+        if(item.style == "marked") {
+          prevMarkedI = i
+          
+          this.p.fill(this.colors.c3)
+          this.p.rect(this.x+s*8.8, yt-this.L.skin.typography.textSize-3, s*6, this.L.skin.typography.textSize+7)
+          this.p.fill(this.colors.c2)
+          this.p.textSize(this.L.skin.typography.textSize+4)
+          this.p.text(item.str, this.x+s*9, yt)
+          lines++
+
+
+        } else if(flag){
+          let length = i+1-prevMarkedI 
+          let str = ""
+          for(let j=prevMarkedI; j<length; j++) {
+            str += a[prevMarkedI+j].str + " "
+          }
+          this.p.fill(this.colors.c2)
+          this.p.textSize(this.L.skin.typography.textSize)
+          this.p.text(str, this.x+s*9, yt)
+          lines++
+        }
+        
+      })
+      // this.p.text(, this.x+s*8, this.y+s*2.5, s*6, s*4)
+      this.p.pop()
+    } else {
+      console.log("display front")
+      // this.L.product.displayFront.display()
+    }
     // console.log(text)
 
-    
-
-    let prevMarkedI = 0
-    let lines = 1
-    text.forEach((item, i, a)=>{
-      let yt = this.y+(this.L.skin.typography.textSize+5)*(lines)+s*1
-      //if next is marked concat all before last marked
-      let flag = i!=a.length-1? a[i+1].style == "marked" : true
-      if(item.style == "marked") {
-        prevMarkedI = i
-        
-        this.p.fill(this.colors.c3)
-        this.p.rect(this.x+s*8.8, yt-this.L.skin.typography.textSize-3, s*5, this.L.skin.typography.textSize+7)
-        this.p.fill(this.colors.c2)
-        this.p.textSize(this.L.skin.typography.textSize+4)
-        this.p.text(item.str, this.x+s*9, yt)
-        lines++
-
-
-      } else if(flag){
-        let length = i+1-prevMarkedI 
-        let str = ""
-        for(let j=prevMarkedI; j<length; j++) {
-          str += a[prevMarkedI+j].str + " "
-        }
-        this.p.fill(this.colors.c2)
-        this.p.textSize(this.L.skin.typography.textSize)
-        this.p.text(str, this.x+s*9, yt)
-        lines++
-      }
-      
-    })
-    // this.p.text(, this.x+s*8, this.y+s*2.5, s*6, s*4)
-    
-    
-    this.p.pop()
+  
     this.p.textSize(14)
 
     //creates output Labels
@@ -351,14 +409,6 @@ class OpShape extends Shape {
       let x = !i ? this.B.snapToGrid(this.x + this.B.gridSize*2) : this.B.snapToGrid(this.x + this.w - this.B.gridSize*2) 
       this.p.text(item, x-s*.4, this.y+s*8.5, s*4, s*4)
     })
-
-    //creates input Label
-    // this.inLabels.forEach((item, i, arr)=>{
-    //   let distX = this.w / (arr.length + 1)
-    //   let x = this.B.snapToGrid(this.x + distX * (i+1) ) - s*.5
-    //   this.p.text(item, x, this.y+s, s*4, s*4)
-    // })
-    //
 
     this.portList.forEach(item=>{
       item.display()
@@ -382,9 +432,17 @@ class StateRepShape extends Shape {
     this.h = this.B.gridSize*6
     this.bdryW = this.w + this.B.gridSize * 2
     this.bdryH = this.h + this.B.gridSize * 2
+    this.name = stateRepInfo.details.name
+    this.description = stateRepInfo.details.description 
+
+    this.icon = this.L.assets.loadedIcons.find(item=>item.name==stateRepInfo.details.icon).icon
+    this.iconPath = this.L.assets.iconList.find(item=>item.name==stateRepInfo.details.icon).path
 
     this.portList = this.createPortShapes(this.B.gridSize)
     
+    let domPos = B.canvasToScreenCoordConverter(10,10)
+    this.DOM_mechInterface = new MechDOMShape(domPos, this, this.mech, this.p, this.L, this.B)
+
   }
 
 
@@ -431,8 +489,9 @@ class StateRepShape extends Shape {
     
     this.p.textSize(this.typo.hSml)
     this.p.fill(this.typo.col)
+    this.p.textFont(this.L.assets.fonts.breadFont)
     this.p.textAlign(this.p.CENTER, this.p.CENTER)
-    this.p.text(qNr, qX, qY, qS, qS)
+    this.p.text(qNr, qX, qY-5, qS, qS)
 
 
     this.p.pop()
@@ -491,7 +550,6 @@ class Port {
 
     this.cX = cX
     this.cY = cY
-
   }
 
   //check if a pos is inside the port
@@ -522,7 +580,7 @@ class Port {
         let up = port.portName == r.outP
         let ii = this.mech.id.startsWith(r.inId)
         let ip = this.portName == r.inP
-        // console.log(ui, up, ii, ip)
+        console.log(ui, up, ii, ip)
         return ui && up && ii && ip
       })
 
@@ -556,7 +614,7 @@ class Port {
     this.open = false
 
     //if portinB - keep it open
-    if(portIn.portName != "portInB") {
+    if(portIn.portName != "portInB" && !portIn.mech.build) {
       portIn.open = false
     }
 
@@ -613,16 +671,15 @@ class Port {
         this.connection.updatePos(this.type)
       }
       
-      if(this.type=="out") {
-        let check = Array.isArray(this.connection) ? this.connection.length ? true : false : false
-        if(check) {
+        let check = Array.isArray(this.connection) ? this.connection.length ? true : "empty" : false
+        if(check && check!="empty") {
           console.log("con is array")
           this.connection.forEach(con=>{con.updatePos(this.type); con.display()})
-        } else if(this.connection) {
+        } else if(this.connection && !check) {
           this.connection.updatePos(this.type)
           this.connection.display()
         }
-      }
+      
 
     }
 
@@ -701,7 +758,7 @@ class Connection {
     this.openEnd = false
     this.connectable = true
     // console.log(this.endPort.connection)
-    this.endPort.connection =  (this.endPort.portName=="portInB") ? [...this.endPort.connection, this] : this
+    this.endPort.connection =  (this.endPort.portName=="portInB" || this.endPort.build) ? [...this.endPort.connection, this] : this
     // console.log(this.endPort.connection)
     
     // console.log(this.endPort, port)
@@ -909,7 +966,8 @@ class Connection {
     this.p.drawingContext.shadowOffsetY = 5;
     this.p.drawingContext.shadowBlur = 9;
     this.p.drawingContext.shadowColor = 'rgb(115, 70, 26)';
-    
+    // this.p.blendMode(this.p.LIGHTEST)
+
     this.p.beginShape()
     this.pathArr = this.calcPath()
     this.pathArr.forEach(item=>{
@@ -922,6 +980,97 @@ class Connection {
   }
 }
 
+class IconShape extends Shape { 
+  constructor({...pos}, mech, toolMenu, p5, L, B) {
+    super({...pos},mech, p5, L, B)
+    let {...o} = this.mech.details
+
+    this.icon = this.L.assets.loadedIcons.find(item=>item.name==o.icon).icon
+    this.iconPath = this.L.assets.iconList.find(item=>item.name==o.icon).path
+    this.name = o.name
+    this.description = o.description
+    this.op = o.icon
+    this.w = 120
+    this.h = 60
+
+    this.prevX = this.x
+    this.prevY = this.y
+    
+    this.drawBdry = false
+
+    this.stroke = this.L.skin.pallet.c2
+
+    this.toolMenu = toolMenu
+
+    this.opParameter = mech
+
+    this.DOM_mechInterface = new MechDOMShape({x: 0, y: 0}, this, this.opParameter, this.p, this.L, this.B) 
+
+  }
+
+  posInsideShape(x, y) {
+    return super.posInsideShape(x-this.toolMenu.x, y-this.toolMenu.y)
+  }
+
+  updatePos(nX, nY) {
+    let offSetX = nX-this.w/2 - this.toolMenu.x
+    let offSetY = nY-this.h/2 - this.toolMenu.y
+    let newOp
+    if(!this.toolMenu.posInsideShape(nX,nY)) {
+      console.log("Create Operation.")
+      
+      this.toolMenu.targeted = false
+      this.toolMenu.visible = false
+      this.moving = false
+      this.x = this.prevX 
+      this.y = this.prevY
+
+      this.opParameter.pos = {
+        x: nX,
+        y: nY
+      }
+
+      if(this.op == "cut") {
+        newOp = new Cut(this.opParameter, this.p, this.L, this.B )
+      } else if (this.op == "sort") {
+        newOp = new Sort(this.opParameter, this.p, this.L, this.B )
+      } else if (this.op == "muda") {
+        newOp = new Muda(this.opParameter, this.p, this.L, this.B )
+      }
+
+      newOp.shape.selected = true
+      newOp.shape.moving = true
+      return newOp
+
+    } else {
+      this.x = offSetX
+      this.y = offSetY
+      return this
+    }
+  }
+
+  dropped() {
+    this.droppable = true
+    this.moving = false
+    this.selected = true
+    this.x = this.prevX
+    this.y = this.prevY
+  }
+
+  display() {
+    super.display()
+
+    this.p.image(this.icon, this.x+5, this.y+10, 40, 40)
+
+    this.p.textSize(this.L.skin.typography.textSize)
+    this.p.textFont(this.L.assets.fonts.breadFont)
+    this.p.fill(this.L.skin.pallet.c2)
+
+    this.p.text(this.name, this.x+55, this.y+35)
+
+  }
+
+}
 
 
 
@@ -931,39 +1080,155 @@ class Connection {
 
 
 
+class ToolMenu {
+  constructor({...pos}, p5, L, B) {
+    this.p = p5
+    this.L = L
+    this.B = B
+
+    let {x,y,w,h, posSetting} = pos
+    this.x = x
+    this.y = y
+    this.h = h
+    this.w = w
+    this.corner = 15
+    this.yAfterOps = 0
+    this.posSetting = posSetting
+
+    this.visible = true
+    this.targeted = false
 
 
+    this.menuItems = this.getmenuItems()
+  }
+
+  getmenuItems() {
+    let list = [opCut, opSort, opMuda]
+
+    list = list.map((item, i)=>{
+      let pos = {
+        x: 15,
+        y: 125 + 70*i,
+        snap: true
+      }
+      this.yAfterOps = i==list.length-1 ? pos.y+70 : 0
+      return new IconShape(pos, item, this, this.p, this.L, this.B)
+    })
+    
 
 
+    
 
+    return list
+  }
 
+  setToolMenuPos(pos) {
+    // let posList = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
+    let margin = {x:10, y:10}
+    
+    this.B.toolMenuPos.posSetting = pos
 
+    switch (pos) {
+      case "topRight":
+        this.B.toolMenuPos.x = this.p.windowWidth - this.B.toolMenuPos.w - margin.x
+        this.B.toolMenuPos.y = margin.y
+        this.x = margin.x
+        break;
+  
+      case "bottomLeft":
+        this.B.toolMenuPos.x = margin.x
+        this.B.toolMenuPos.y = this.p.windowHeight - this.B.toolMenuPos.h - margin.y
+        break;
+  
+      case "bottomRight":
+        this.B.toolMenuPos.x = this.p.windowWidth - this.B.toolMenuPos.w - margin.x
+        this.B.toolMenuPos.y = this.p.windowHeight - this.B.toolMenuPos.h - margin.y
+        break;
+  
+      default:
+        this.B.toolMenuPos.posSetting = "topLeft"
+        this.B.toolMenuPos.x = margin.x
+        this.B.toolMenuPos.y = margin.y
+        break;
+      }
 
+      this.x = this.B.toolMenuPos.x
+      this.y = this.B.toolMenuPos.y
+      this.posSetting = this.B.toolMenuPos.posSetting
+    
+  }
 
+  //checks if a pos is inside the shape or bdry
+  posInsideShape(x,y) {
+    let sX = this.x
+    let sY = this.y
+    let w = this.w
+    let h = this.h
+    
+    let bool = (x > sX && x < sX + w) && (y > sY && y < sY + h)
+    return bool
+  }
 
-// class IconShape extends Shape {
-//   constructor({...pos},{...mech}, p5, L, B) {
-//     super({...pos},{...mech}, p5, L, B)
-   
-//   }
+  display() {
+    this.p.push()
 
-// }
+    this.p.translate(this.x, this.y)
+    this.p.fill(this.L.skin.pallet.c1)
+    this.p.stroke(this.L.skin.pallet.c2)
+    
+    //container for menu----------------------------------------------
+    this.p.push()
+    this.p.drawingContext.shadowOffsetX = 3;
+    this.p.drawingContext.shadowOffsetY = 3;
+    this.p.drawingContext.shadowBlur = 11;
+    this.p.drawingContext.shadowColor = 'rgba(43, 42, 40, 0.6)';
 
-// class MechInfoShape extends Shape {
-//   constructor({...pos},{...mech}, p5, L, B) {
-//     super({...pos},{...mech}, p5, L, B)
+    this.p.fill(L.skin.pallet.c1)
+    this.p.noStroke()
+    this.p.rect(0, 0, this.w, this.h, this.corner)
+    this.p.pop()
 
-//   }
+    //Settings----------------------------------------------
+    this.p.push()
+    this.p.rect(7, 10, this.w-14, 30, 10)
+    
 
-// }
+    this.p.pop()
 
+    //Points----------------------------------------------
+    this.p.push()
+    this.p.noStroke()
+    this.p.rect(7, 45, this.w-14, 30, 10)
 
-//product preview
+    this.p.fill(this.L.skin.pallet.c2)
+    this.p.textSize(this.L.skin.typography.textSize)
+    this.p.textFont(this.L.assets.fonts.breadFont)
+    let icon = this.L.assets.loadedIcons.find(item=>item.name=="nodaler").icon
+    this.p.image(icon, 4, 50, 35, 35)
+    // this.p.text("Nodaler", 15, 66)
+    this.p.text("6000", 35, 75)
+    this.p.pop()
 
-//starting mat
+    //Titel----------------------------------------------
+    this.p.push()
+    this.p.fill(L.skin.typography.col2)
+    this.p.textSize(L.skin.typography.hSml)
+    this.p.textFont(L.assets.fonts.headFont)
+    this.p.text("Maskiner", 13, 115)
+    this.p.pop()
 
-//toolbar
+    //Maskiner/OperationIcons----------------------------------------------
+    this.p.push()
+    this.menuItems.forEach(item=>{
+      item.display()
+    })
 
-//playerPoints/stats
+    this.p.pop()
 
-//helpbox and settings
+    //Product representation----------------------------------------------
+    let y = this.yAfterOps
+    let pos = {x: 7, y:y+10, w: this.w-14, h: this.w-14 }
+
+    this.p.pop()
+  }
+}

@@ -17,6 +17,7 @@ class Operations {
     this.portRules = o.portRules
     this.details = o.details
 
+    this.build = o.build ? o.build : false
     this.action = o.action
 
     this.doneMatList = o.doneMatList ? o.doneMatList : []
@@ -40,6 +41,8 @@ class Operations {
     
     this.new ? this.closePortsOut() : {}
     this.new ? this.createPortOutStateReps() : {}
+    this.L.operations.push(this)
+    
   }
 
   //shold run directly
@@ -51,7 +54,7 @@ class Operations {
         portInA: [this],
         pos: {
           x:this.shape.x + (this.shape.w)*i - this.B.gridSize*2,
-          y:this.shape.y + this.shape.bdryW
+          y:this.shape.y + this.B.gridSize*9
         }
       }
   
@@ -59,15 +62,16 @@ class Operations {
       this["portOut"+String.fromCharCode(65+i)] = newStObj
       this.L.stateReps.push(newStObj)
     }
-
+    console.log(this)
     this.updatePorts()
   }
 
   updatePorts() {
-    eFlow("Operations/update Ports (run from createPortOutStaeReps)")
+    eFlow("Operations/update Ports (run from createPortOutStateReps)")
 
     // console.log(this.shape.portList)
     this.shape.portList.forEach(item=>{
+      console.log(item.portName)
       if(item.portName!="portIn") {
         item.connectTwoPorts(this[item.portName].shape.portList.find(p=>p.portName=="portInA"), true)
       }
@@ -88,8 +92,12 @@ class Operations {
   connectStateRepToPortIn(stateRep) {
     eFlow("Operations/connectStateRepToPortIn")
     let res
-    if(!this.portIn) {
+    if(Array.isArray(this.portIn)) {
+      this.portIn.push(stateRep)
+      res = true
+    } else if(!this.portIn) {
       this.portIn = stateRep
+      this.shape.clicked()
       res = true
     } else {
       console.log("port is occupied")
@@ -124,11 +132,16 @@ class Operations {
     this.doneMatList = []
   }
 
-  disconnectPortIn() {
+  disconnectPortIn(stateRep) {
     eFlow("Operations/disconnectPortIn operations")
-    this.portIn = null
-    this.toDoMatList = []
-    this.removeDoneMatFromPortOuts()
+    if(!this.build) {
+      this.portIn = null
+      this.toDoMatList = []
+      this.removeDoneMatFromPortOuts()
+    } else {
+      this.portIn.splice(this.portIn.findIndex(sr=>sr.id==stateRep.id), 1)
+      this.updateToDoList()
+    }
 
     //check staterep
     //remove Mat from port out state rep.
@@ -142,24 +155,33 @@ class Operations {
     // console.log("portInList", this.portIn.matList.map(i=>i.id.substr(-4) + "----uKey: "+ i.uniqueKey.substr(-4) + "---clone: "+i.clone))
     // console.log("toDoList - before", this.toDoMatList.map(i=>i.id.substr(-4) + "----uKey: "+ i.uniqueKey.substr(-4) + "---clone: "+i.clone))
 
-    
-    //if port in isn't empty mats that don't exist in doneMatList are added
-    this.toDoMatList = !this.portIn ? [] : this.portIn.matList.filter(item=>{
-      let rule = matType ? matType == item.type : true
-      let match = this.doneMatList.find(mat=>{
-        let unique = mat.uniqueKey==item.uniqueKey
-        let clone = !item.clone
-     
-        return unique && clone      
+    if(!this.build) {
+      //if port in isn't empty mats that don't exist in doneMatList are added
+      this.toDoMatList = !this.portIn ? [] : this.portIn.matList.filter(item=>{
+        let rule = matType ? matType == item.type : true
+        let match = this.doneMatList.find(mat=>{
+          let unique = mat.uniqueKey==item.uniqueKey
+          let clone = !item.clone
+       
+          return unique && clone      
+        })
+  
+        // !match ? console.log("doesn't exist, go to toDo?", item) : {}
+  
+        // console.log(this.doneMatList.map(i=>i.id))
+        return !match && rule
       })
-
-      // !match ? console.log("doesn't exist, go to toDo?", item) : {}
-
-      // console.log(this.doneMatList.map(i=>i.id))
-      return !match && rule
-    })
+    } else {
+      this.toDoMatList = []
+      if(this.portIn.length) {
+        this.portIn.forEach(sr=>{
+          sr.matList.forEach(m=>{
+            this.toDoMatList.push(m)
+          })
+        }) 
+      }
+    }
     
-    // console.log("toDoList - after", this.toDoMatList.map(i=>i.id.substr(-4) + "----uKey: "+ i.uniqueKey.substr(-4)+"---clone: "+i.clone))
   }
 
   updateDoneList() {
@@ -222,10 +244,10 @@ class Cut extends Operations {
   //used for most subClasses of Operations
   setParameters() {
     //if parameters have changed the donelist should change
+    
 
 
     let {side, measure} = this.parameters
-    
     side = side ? side : "b"
     measure = measure ? measure: "1/3"
 
@@ -233,6 +255,10 @@ class Cut extends Operations {
   }
 
   parameterDisplay() {
+    if(!this.parameters.side) {
+      return "Välj vilkor"
+    }
+
     let side = this.parameters.side=="l" ? "längden" : "brädden"
 
     let string = `Kapa [${this.parameters.measure}] av [${side}]`
@@ -243,8 +269,9 @@ class Cut extends Operations {
   //usd for all subclasses of oberations
   executeOp() {
     eFlow("CUT/executeOP cut")
+    let status
 
-    this.setParameters()
+    // this.setParameters()
     let {side, measure} = this.parameters
     //controls that parameters are set
     if(!side, !measure) {
@@ -252,7 +279,6 @@ class Cut extends Operations {
       return status
     }
     
-    let status
     // console.log("cut:", this.toDoMatLists)
     this.toDoMatList.forEach(item => {
       // console.log(item, measure, side)
@@ -365,8 +391,6 @@ class Cut extends Operations {
     }
     return res
   }
-
-  
   
 }
 
@@ -378,6 +402,36 @@ class Sort extends Operations {
 
   }
 
+  resetOperation(upd) {
+    //if argument is undefined it should be true
+    upd = upd==undefined ? true : upd
+
+    //remove all elemnts from outputs
+    //each element that exist in port ut is removed from portOutMec and from material list
+    this.doneMatList.forEach(item=> {
+    
+      console.log(console.log(item))
+      //removefrom SR
+      let srId = this.L.materials.find(m=>m.uniqueKey==item.uniqueKey && m.fromMechId==this.id)
+      let srMl = this.L.stateReps.find(mech=>mech.id==srId.curMechId).matList
+      srMl.splice(srMl.findIndex(m=>m.uniqueKey==srId.uniqueKey), 1)
+
+
+      //remove from MatList
+      this.L.materials.splice(this.L.materials.findIndex(m=>m.uniqueKey==item.uniqueKey && m.fromMechId==this.id),1)
+
+    })
+    
+    this.toDoMatList = []
+    this.doneMatList = []
+    this.portIn? this.portIn.passedMatList = [] : {}
+    
+    if(upd) {
+      this.L.updateGameState()
+    }
+
+  }
+
   //used for most subClasses of Operations
   setParameters() {
 
@@ -386,13 +440,13 @@ class Sort extends Operations {
     let {prop, operator, value} = this.parameters
 
     this.parameters.condProp = "b"
-    this.parameters.condOperator = "<"
+    this.parameters.condOperator = "!="
     this.parameters.condValue = "10"
 
   }
 
   parameterDisplay() {
-    if(!this.parameters.condProp) {
+    if(Object.values(this.parameters).some(item=>item==null || item==undefined)) {
       return "Välj vilkor"
     }
 
@@ -401,8 +455,8 @@ class Sort extends Operations {
       type="bredden"
     } else if(this.parameters.condProp=="l") {
       type="längden"
-    } else if(this.parameters.condProp=="l") {
-      type="köplatsen"
+    } else if(this.parameters.condProp=="sRqueue") {
+      type="köplats"
     }
 
     let operator = this.parameters.condOperator=="!="? ["≠"] : this.parameters.condOperator
@@ -414,15 +468,16 @@ class Sort extends Operations {
 
   //used for all subclasses of oberations
   executeOp()  {
-    this.setParameters()
+    // this.setParameters()
     let status
 
     //controls that parameters are set
-    let {prop, operator, value} = this.parameters
-    if(!prop, !operator, (!value && value!=0)) {
+    let {condProp, condOperator, condValue} = this.parameters
+    if(!condProp, !condOperator, (!condValue && condValue!=0)) {
       status = false
       return status
     }
+    console.log("sort run")
     
     this.toDoMatList.forEach(item=>{
       let res = this.action(this.parameters, item)
@@ -436,20 +491,23 @@ class Sort extends Operations {
         // if true add to portOutA eller add to portOutB
 
         //#new Material
+
         let newItem = {...item}
         newItem.clone = true
         newItem.prevMat.push(item)
+        newItem.queue = item.prevMat.length + 1
         newItem.fromMechId = this.id
-        let newMat = new Material(newItem, this.p, this.L, this.B)
+        this.L.materials.push(newItem)    
         
-        
-        
+        console.log(newItem, res)
         if(res) {
           newItem.curMechId = this.portOutA.id
-          this.portOutA.matList.push(newMat)
+          newItem.sRqueue = this.portOutA.matList.length+1
+          this.portOutA.matList.push(newItem)
         } else {
           newItem.curMechId = this.portOutB.id
-          this.portOutB.matList.push(newMat)
+          newItem.sRqueue = this.portOutB.matList.length+1
+          this.portOutB.matList.push(newItem)
         }
         //push mat into passetMatLIst in stateRep
         this.portIn.passedMatList.push(item)
@@ -469,6 +527,7 @@ class Sort extends Operations {
     
   updateOperationPorts() {
     eFlow("Sort/updateOperationPorts")
+    
     if(this.portIn) {
      this.updateToDoList()   
     }
@@ -490,10 +549,89 @@ class Sort extends Operations {
   
 }
 
+class Muda extends Operations {
+  constructor({...o}, p5, L, B) {
+    super(o, p5, L, B)
+    this.opId = o.opId ? o.opId : newId("opMuda")
+  }
 
+  executeOp() {
+    console.log("spill executed")
+  }
+
+  parameterDisplay() {
+    return "Spill operation"
+  }
+
+  updateOperationPorts() {
+    return { res: false, message: "no Spill Operation" }
+  }
+}
+
+
+class Build extends Operations {
+  constructor({...o}, p5, L, B) {
+    super(o, p5, L, B)
+    this.opId = o.opId ? o.opId : newId("opBuild")
+
+    this.portIn = []
+
+  }
+
+  resetOperation() {
+
+  }
+
+  parameterDisplay() {
+    if(Object.values(this.parameters).some(item=>item==null || item==undefined)) {
+      return "Välj vilkor"
+    }
+
+    let type
+    if(this.parameters.condProp=="b") {
+      type="bredden"
+    } else if(this.parameters.condProp=="l") {
+      type="längden"
+    } else if(this.parameters.condProp=="sRqueue") {
+      type="köplats"
+    }
+
+    let operator = this.parameters.condOperator=="!="? ["≠"] : this.parameters.condOperator
+
+    let string = `Är [${type}] [${operator}] [${this.parameters.condValue}]`
+    
+    return string
+  }
+
+  executeOp() {
+    // take in the materials 
+
+    //get the bluePrint
+
+    //find a way to check and match pieces and create modules of the mats
+
+    //feed it into L.product
+    //if L:product is null create new Material.product
+
+    //add displayFront
+    //add displeySide
+
+    //display mat
+    //if product.display is null create new.
+
+
+
+    return { res: false, message: "no Build operation" }
+  }
+
+  updateOperationPorts() {
+    this.updateToDoList()
+
+    return { res: false, message: "no Build operation" }
+  }
+
+}
 
 //muda
 
 //create product
-
-//evaluate
