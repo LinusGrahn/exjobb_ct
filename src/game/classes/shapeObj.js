@@ -1098,6 +1098,10 @@ class ToolMenu {
     this.visible = true
     this.targeted = false
 
+    this.productionButtonPos = []
+    this.productAndChallengeDisplay = new DisplayProductAndChallenge(L.challenge[0], L.product[0], this, this.p, this.L, this.B)
+
+
 
     this.menuItems = this.getmenuItems()
   }
@@ -1169,6 +1173,29 @@ class ToolMenu {
     return bool
   }
 
+  posInsideProductionButtons(x,y) {
+    if(!this.productionButtonPos.length) {
+      console.log("no buttons set")
+      return false
+    }
+
+    let list = this.productionButtonPos.map(el=>{
+      let bool = (x > el.x && x < el.x + el.w) && (y > el.y && y < el.y + el.h)
+      let prop = el.type=="front" || el.type=="profile" ? "side" : "mat"
+      
+      return {bool:bool, prop: prop, type: el.type}
+    })
+    let pressed = list.find(el=>el.bool)
+    if(pressed) {
+      this.productAndChallengeDisplay.showMat[pressed.prop] = pressed.type
+    }
+
+
+    // console.log(pressed, this.productAndChallengeDisplay.showMat)
+
+    return Boolean(pressed)
+  }
+
   display() {
     this.p.push()
 
@@ -1205,7 +1232,7 @@ class ToolMenu {
     this.p.textFont(this.L.assets.fonts.breadFont)
     let icon = this.L.assets.loadedIcons.find(item=>item.name=="nodaler").icon
     this.p.image(icon, 4, 50, 35, 35)
-    // this.p.text("Nodaler", 15, 66)
+    // this.p.text("Budget", 15, 71)
     this.p.text("6000", 35, 75)
     this.p.pop()
 
@@ -1225,9 +1252,22 @@ class ToolMenu {
 
     this.p.pop()
 
+    
+    
     //Product representation----------------------------------------------
     let y = this.yAfterOps
-    let pos = {x: 7, y:y+10, w: this.w-14, h: this.w-14 }
+    let pos = {x: 7, y:y+30, w: this.w-14, h: (this.w-14)*1.6}  
+    //staterept
+    this.p.push()
+    this.p.fill(L.skin.typography.col2)
+    this.p.textSize(18)
+    this.p.textFont(L.assets.fonts.headFont)
+    this.p.text("Produktion", 13, y+17)
+    this.p.pop()
+    
+    //product&challenges
+    this.productAndChallengeDisplay.sml = pos
+    this.productAndChallengeDisplay.display()
 
     this.p.pop()
   }

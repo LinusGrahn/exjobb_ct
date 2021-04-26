@@ -13,7 +13,7 @@ class Board {
     this.maxY= o.h/2;
     this.movingBoard = false; // controles if drag event should move the board
     this.gridSize = o.gridSize; // size of each cell in the grid. board min, max diveded by gridSize should equal an intiger.
-    this.toolMenuPos = o.toolMenuPos ? o.toolMenuPos : {x:10, y:10, h:550, w:150, posSetting: "topLeft" }
+    this.toolMenuPos = o.toolMenuPos ? o.toolMenuPos : {x:10, y:10, h:590, w:150, posSetting: "topLeft" }
 
   }
 
@@ -151,7 +151,7 @@ class Game {
     this.assets = assets
     this.skin = o.skin
 
-    this.challenge = o.challenge
+    this.challenge = o.challenge.map(m=>new Material(m, this.p, this, this.B)) 
     this.cost = o.cost
     this.startMat = o.startMat
     this.retriggerUpdate = 0
@@ -174,6 +174,7 @@ class Game {
     this.unitSize = 5
 
     this.matListOnCanvas = []
+    this.productAndChallengeDisplay = null
 
     this.moduleList = this.getModuleList()
 

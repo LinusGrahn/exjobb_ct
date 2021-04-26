@@ -1,5 +1,6 @@
 'use strict'
 
+
 //Material_Classes------------------------------------------------------------
 class Material {
   constructor({...o}, p5, L, B, ) {
@@ -33,12 +34,13 @@ class Material {
     // this.nextOp = o.nextOp ? o.nextOp : null
 
     this.matDisplay = null //contains a matDisplay object
-    this.displayFront = null //containt product from front
-    this.displaySide = null // contain product from side
+    this.composition = {...o}
 
     // this.compositionProps = o.compositionProps
     // this.evalueate = null
-    this.L.materials.push(this)
+    if(o.type!="prodBP") {
+      this.L.materials.push(this)
+    }
   }
 
 }
@@ -308,7 +310,6 @@ class MaterialDisplay {
     this.L = L
     //the angle of the picture "front" or "profile"
     this.angle = angle
-
     //Mat can be "wood", a modeule or a product and are drawn out of a blueprint 
     //composition takes in a blueprint or composititonProps as basis form drawing the material
     //"wood" is drawn in one way while modules are drawn in an other. Products are drawn from its modules
@@ -317,12 +318,30 @@ class MaterialDisplay {
     this.x = size.x
     this.y = size.y
     this.w = size.w
+
     this.depth = this.L.unitSize
     this.padding = 4
     this.originalX = size.x
     
     //gridcells and prps
     //one cellsize is 5cm (defined in L.unitSize)
+    this.calcGraphics() 
+    
+
+    this.style = this.L.skin.elem
+    this.typo = {...this.L.skin.typography}
+
+
+  }
+
+  calcGraphics(o) {
+    if(o) {
+      let {x,y,w} = {...o}
+      this.x = x
+      this.y = y
+      this.w = w
+    }
+
     let {rows, cols } = this.calcRowsNCols(this.angle)
     this.rows = rows
     this.cols = cols
@@ -336,11 +355,6 @@ class MaterialDisplay {
 
     this.bdryY = this.h > this.w ? this.y : this.y - (this.w-this.h)/2
     this.bdryH = this.h > this.w ? this.h : this.h - (this.w-this.h)
-
-    this.style = this.L.skin.elem
-    this.typo = {...this.L.skin.typography}
-
-
   }
 
   //creates the grid and defines the visible grid in different scales
@@ -456,7 +470,7 @@ class MaterialDisplay {
       mat.parts.sort((a,b)=>a.index-b.index).forEach(item=>{
         let elm = {...item[angle]}
 
-        this.p.fill("brown")
+        this.p.fill(this.style.matFill)
 
         if(elm.shape == "rect") {
           this.p[elm.shape](this.unitToCell(elm.x), this.unitToCell(elm.y), this.unitToCell(elm.w), this.unitToCell(elm.h), elm.corners)
@@ -533,7 +547,7 @@ class MaterialDisplay {
   display(size) {
     this.p.push()
     if(size) {
-      console.log(size/this.bdryW, this.originalX, this.x, this.bdryX)
+      // console.log(size/this.bdryW, this.originalX, this.x, this.bdryX)
       this.p.scale(size/this.bdryW)
       let offset = this.bdryX-this.originalX
       if(offset) {
@@ -541,7 +555,7 @@ class MaterialDisplay {
         this.bdryX = this.bdryX - offset
       }
 
-    }
+    } 
 
     //bdry
     this.p.noStroke()
@@ -578,12 +592,18 @@ class MaterialDisplay {
 
 
 class DisplayMatsOnCanvas {
-  constructor({...pos},[...matList], p5, L, B) {
+  constructor({...pos},[...matList], action, p5, L, B) {
     this.p = p5
     this.L = L
     this.B = B
-    
-    this.matList = matList
+    this.action = action
+    if(this.action=="stateRep") {
+      this.matList = matList
+    } else if(this.action=="build") {
+      this.challenge = matList[0]
+      this.product = matList[1]
+    }
+
     let {x,y} = pos 
     this.x = x
     this.y = y
@@ -595,26 +615,12 @@ class DisplayMatsOnCanvas {
 
   }
   
-  display() {
-    console.log(this)
-    this.p.push()
-
-    this.p.fill(this.L.skin.pallet.c1)
-    this.p.stroke(this.L.skin.pallet.c2)
-    this.p.drawingContext.shadowOffsetX = 3;
-    this.p.drawingContext.shadowOffsetY = 3;
-    this.p.drawingContext.shadowBlur = 11;
-    this.p.drawingContext.shadowColor = 'rgba(43, 42, 40, 0.6)';
-
-    let a = this.p.rect(this.x, this.y, this.p.windowWidth-32, 400, this.corners)
-    console.log(a)
-    this.p.pop()
+  showStateRepMats() {
     
     this.p.push()
     this.p.translate(this.x+10, this.y+10)
 
     this.matList.forEach((mat, i)=>{
-      console.log(mat)
       let angle = mat.id.startsWith("wood") ? "front" : "profile"
       let size = {
         xB: 0,
@@ -625,7 +631,6 @@ class DisplayMatsOnCanvas {
         w: 100
       }
       let md = new MaterialDisplay(size, mat, angle, this.p, this.B, this.L)
-      console.log(md)      
       md.display(size.w)
       
       this.p.push()
@@ -656,73 +661,276 @@ class DisplayMatsOnCanvas {
 
 
     this.p.pop()
+  }
+  showProd() {
+    // let propName = this.action=="build" ? "product" : "challenge"
+    let propName = "challenge"
+    this.p.push()
+    this.p.translate(this.x+7, this.y+10)
+    
+    //Mat dispaly
+    let size = {
+      x: 0,
+      y: 0,
+      w: this.p.windowHeight/4-20
+    }
 
+    this[propName].front.calcGraphics(size)
+    this[propName].front.display(size.w)
+
+    size.y += size.w*1.8
+    this[propName].profile.calcGraphics(size)
+    this[propName].profile.display(size.w)
+
+    //List of parts
+    //get list of all modNames and mats
+    //translate 00 to right side
+    this.p.translate(size.w*1.4, 30)
+
+    let partsList = []
+    //add list to draw out
+    this[propName].parts.forEach(part=>{
+      let aux = {type: "mod",  name:part.name, b: null, l:null }
+      aux.status = null
+      partsList.push(aux)
+      part.parts.forEach(m=>{
+
+        aux = {type: "wood",  name:null, b: m.parts.b, l: m.parts.l }
+        aux.status = null
+        partsList.push(aux)
+      })
+    })
+    
+    console.log(partsList, "partsLst")
+    //MAKE A RECT
+    this.p.fill(this.L.skin.pallet.c2)
+    this.p.textSize(L.skin.typography.textSize)
+    this.p.noStroke()
+
+    this.p.push()
+    partsList.forEach((part, i)=>{
+      let str = part.name
+      let x = 0
+        this.p.textFont(L.assets.fonts.headFont)
+
+      if (part.type=="wood") {
+        str = `Material - Bredd: ${part.b} cm, Längd: ${part.l} cm`
+        this.p.textFont(L.assets.fonts.breadFont)
+        x = 15
+      }
+      
+      this.p.text(str, x, 25*i)
+      
+      if(part.status) {
+        
+      }
+      
+    })
+    this.p.pop()
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    this.p.pop()
+  }
+
+
+  display() {
+    this.p.push()
+
+    this.p.fill(this.L.skin.pallet.c1)
+    this.p.stroke(this.L.skin.pallet.c2)
+    this.p.drawingContext.shadowOffsetX = 3;
+    this.p.drawingContext.shadowOffsetY = 3;
+    this.p.drawingContext.shadowBlur = 11;
+    this.p.drawingContext.shadowColor = 'rgba(43, 42, 40, 0.6)';
+
+    let a = this.p.rect(this.x, this.y, this.p.windowWidth-32, this.p.windowHeight/2, this.corners)
+
+    this.p.pop()
+
+    console.log(this)
+
+    if(this.action=="stateRep") {
+      this.showStateRepMats()
+    } else {
+      this.showProd()
+    }
     // this.p.redraw()
   }
   
 }
 
 
-class displayProductAndChallenge {
-  constructor({...pos},challenge, product, p5, L, B) {
+class DisplayProductAndChallenge {
+  constructor(challenge, product, parent, p5, L, B) {
     this.p = p5
     this.L = L
     this.B = B
     
-    this.matList = matList
-    let {x,y} = pos 
-    this.x = x
-    this.y = y
     this.corners = 15
-
+    this.parent = parent
+    
+    this.sml = {x: 10, y:400, w: 150, h: 200}
+    this.lrg = {x: 10, y:10, w: 300, h: 400}
+    this.size = "sml"  // coresponds with different sizes
+    
+    this.product = product ? product : [] //mat object like bluePrint
+    this.challenge = challenge
+    this.challenge.front = new MaterialDisplay(this[this.size], this.challenge, "front", this.p, this.B, this.L)
+    this.challenge.profile = new MaterialDisplay(this[this.size], this.challenge, "profile", this.p, this.B, this.L)
+    this.productmatDisplayUpd()
+    // this.challenge = this.L.challenge[0]
     //angle?
+
+    //{mat: "challenge"/"product", side: "front"/"profile"}
+    this.showMat = {mat: "challenge", side: "profile"}
 
     console.log(this)
 
   }
 
+  calcMDSize() {
+    let {w} = this[this.size]
+    let size = {x:0, y:0, w:w-10}
+    return size
+  }
+
+  productmatDisplayUpd(trig) {
+    //safe for recurcion
+    trig = trig==true ? true : false
+
+    if(!this.product.length) {
+      console.log("product is empty")
+      if(!trig) {
+        this.product = this.L.product
+        this.productmatDisplayUpd(true)
+      }
+      return 
+    } else {
+      console.log("product is somthing")
+      this.product.front = new MaterialDisplay(this[this.size], this.product, "front", this.p, this.B, this.L)
+      this.product.profile = new MaterialDisplay(this[this.size], this.product, "profile", this.p, this.B, this.L)
+    }
+  }
+
+  updateAllmatDisplayss() {
+    this.challenge.front = new MaterialDisplay(this[this.size], this.challenge, "front", this.p, this.B, this.L)
+    this.challenge.profile = new MaterialDisplay(this[this.size], this.challenge, "profile", this.p, this.B, this.L)
+    this.productmatDisplayUpd()
+  }
+
   display() {
-    // this.p.push()
-
-    // this.p.fill(L.skin.typography.col2)
-    // this.p.textSize(L.skin.typography.hSml)
-    // this.p.textFont(L.assets.fonts.headFont)
-    // this.p.text("Produkt &", 13, y+30)
-    // this.p.text("utmaning", 13, y+53)
-    
-    // this.p.fill(L.skin.pallet.c1)
-    // this.p.rect(7, y+70, this.w-14, this.w-14, 10)
-
-    // this.p.pop()
+    let {x,y,w,h} = this[this.size]
+    // console.log(this[this.size])
+    this.p.push() //first
 
 
-    this.p.translate(this.x+10, this.y+10)
+    this.p.translate(x, y)
 
 
 
 
     this.p.push()
       this.p.stroke(this.L.skin.pallet.c2)
-      this.p.strokeWeight(2)
-      this.p.noFill()
-
-      this.p.rect(size.xB, size.yB, size.wB, size.wB, 10)
       this.p.fill(this.L.skin.pallet.c1)
+
+      //container
+      this.p.rect(0, 0, w, h, 10)
+
+      //parameters for buttons
+      let butW = w/2-10
+      let butH = 30
+      let xL = 5
+      let xR = 5+butW+10
+      let y2 = 5+butH+10
+
+      let xLTxt = xL+butW/2
+      let xRTxt = xR+butW/2
+      let y1T = butH/2
+      let y2T = y1T+butH+10
       
-      this.p.fill(this.L.skin.pallet.c2)
-      this.p.stroke(this.L.skin.pallet.c3)
-      this.p.strokeWeight(2)
+      let yMD = y2T+butH
 
-      this.p.rect(size.xB+(size.wB-30), size.yB-5, 35, 35, 50)
+      
 
-      this.p.noStroke()
-      this.p.textSize(this.L.skin.typography.textSize)
+
+      //product and challenge buttonContainter
+      
+
+
+      let list = [
+        {type: "challenge", txt:"Ritning", x: xLTxt, y:y1T,bX: xL, bY: 5, bW: butW, bH: butH},
+        {type: "product", txt:"Status", x: xRTxt, y:y1T, bX: xR, bY: 5, bW: butW, bH: butH},
+        {type:"front", txt:"Front", x: xLTxt, y:y2T, bX: xL, bY: y2, bW: butW, bH: butH},
+        {type:"profile", txt:"Profil", x: xRTxt, y:y2T, bX: xR, bY: y2, bW: butW, bH: butH}
+      ]
+
+      
+      this.parent.productionButtonPos = list.map(item=>{
+        let el = {
+          type: item.type,
+          x: item.bX+x,
+          y: item.bY+y,
+          w: item.bW,
+          h: item.bH
+        }
+
+        return el
+      })
+      
+      
+
+      //product and challenge buttonText
+      this.p.push()
+      this.p.stroke(this.L.skin.pallet.c2)
+      this.p.textSize(16)
       this.p.textFont(this.L.assets.fonts.breadFont)
-      this.p.fill(this.L.skin.pallet.c1)
       this.p.textAlign(this.p.CENTER, this.p.CENTER)
+      
+      list.forEach(item=>{
+        let active = item.type==this.showMat.mat || item.type==this.showMat.side
+        this.p.push()
+        active ? this.p.fill(this.L.skin.pallet.c2T) : this.p.fill(this.L.skin.pallet.c2)
+        this.p.rect(item.bX, item.bY, item.bW, item.bH, 10)
+        
+        active ? this.p.fill(this.L.skin.pallet.c2) : this.p.fill(this.L.skin.pallet.c1)
+        this.p.noStroke()
+        this.p.text(item.txt, item.x, item.y)
+        this.p.pop()
+      })
 
-      this.p.text(i+1, size.xB+(size.wB-17), size.yB+9)
+      this.p.pop()
+
+      this.p.push()
+      this.p.translate(0, yMD)
+      let size = this.calcMDSize()
+      let md = this[this.showMat.mat][this.showMat.side]
+      md.calcGraphics(size)
+      md.display(size.w)
+      // 
+
+      this.p.pop()
       
       this.p.pop()
+
+      this.p.pop() //last
   }
 }

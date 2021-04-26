@@ -62,7 +62,7 @@ class Operations {
       this["portOut"+String.fromCharCode(65+i)] = newStObj
       this.L.stateReps.push(newStObj)
     }
-    console.log(this)
+    // console.log(this)
     this.updatePorts()
   }
 
@@ -71,7 +71,7 @@ class Operations {
 
     // console.log(this.shape.portList)
     this.shape.portList.forEach(item=>{
-      console.log(item.portName)
+      // console.log(item.portName)
       if(item.portName!="portIn") {
         item.connectTwoPorts(this[item.portName].shape.portList.find(p=>p.portName=="portInA"), true)
       }

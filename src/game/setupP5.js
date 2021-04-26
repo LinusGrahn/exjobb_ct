@@ -1,5 +1,6 @@
 'use strict'
 
+
 const game = (p, gameType, assets) => {
   //used to se the order of execution
   let eFlowArr = []
@@ -24,8 +25,7 @@ const game = (p, gameType, assets) => {
     let B = new Board(gameBoard, p) 
     console.log(gameType)
     let L = new Game(gameType, p, B, assets)
-
-
+    
     //[happens in op tool object]
     opCut.pos = {x: -275, y: -400}
     opSort.pos = {x: 150, y: -400}
@@ -36,7 +36,7 @@ const game = (p, gameType, assets) => {
     new Build(opBuild, p, L, B) 
     
     new Muda(opMuda, p, L, B) // placing a cut operation on board
-
+    
     L.toolMenu = new ToolMenu(B.toolMenuPos, p, L, B)
     // L.toolMenu.setToolMenuPos("topLeft")
 
@@ -52,18 +52,16 @@ const game = (p, gameType, assets) => {
     window.zoom = false
     window.eTimer = null
     window.dev = true
+    window.fc = 0
 
 
-    
-    // add materials
-    // add State
-    // add connections
 
   
     p.noLoop()
   }
   
   p.draw = function() {
+    
     p.clear()
     // console.log("challenge is -->", L.challenge)
     //createe background
@@ -125,6 +123,15 @@ const game = (p, gameType, assets) => {
       L.matListOnCanvas.map(m=>m.display())
     }
 
+
+
+
+    //safe for if loop doesn't stop
+    if(window.fc>200 && !p.mouseIsPressed) {
+      window.fc = 0
+      p.noLoop()
+    }
+    window.fc++
   }
   
 
@@ -144,9 +151,9 @@ const game = (p, gameType, assets) => {
         L.domElems.forEach(item=>item.removeElem())
       }
 
-      console.log("canvas")
       window.dom = false
       removeDom = true
+      console.log("canvas")
     } else {
       console.log("DOM element")
       // e.target.style.color = "red"
@@ -182,6 +189,8 @@ const game = (p, gameType, assets) => {
         window.target = null
       }
 
+
+      L.toolMenu.posInsideProductionButtons(p.mouseX,p.mouseY)
 
       window.port = null
       return false

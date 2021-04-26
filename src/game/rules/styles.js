@@ -6,7 +6,7 @@ let pallet = {
   c1T: "rgba(68,85,93,.3)", //blueTrans
   c2T: "rgba(220,198,176,.3)", //beigeTrans
   c3T: "rgba(16,124,93,.3)", // terracottaTrans
-  mat: "rgb(164,124,93)"
+  mat: "rgb(145, 66, 48)"
 }
 
 const skin = {
@@ -14,7 +14,7 @@ const skin = {
 
   typography: {
     //textsizes
-    textSize: 18,
+    textSize: 16,
     hSml: 22,
 
 

@@ -448,10 +448,12 @@ class MechDOMShape extends DOMShape {
     
     // //setButton
 
-    // if(!this.mech.portIn) {
-    //   let lowerC = this.appendAndCreateContainer("flexCenter", this.elem)
-    //   this.appendAndCreateP("Mata in material i masikinen för för att kapa det.", lowerC)
-    // }
+    if(!this.mech.portIn) {
+      let lowerC = this.appendAndCreateContainer("flexCenter", this.elem)
+      this.appendAndCreateP("Mata in material att sortera det.", lowerC)
+    }
+
+
   
     
     return container
@@ -460,7 +462,18 @@ class MechDOMShape extends DOMShape {
 
   //BUILD
   createInterfaceBuild() {
-    
+    let container = this.appendAndCreateContainer("block", this.elem)
+    container.elt.style.marginBottom = "0px"
+    let mats = [L.toolMenu.productAndChallengeDisplay.challenge,L.toolMenu.productAndChallengeDisplay.product ]
+
+
+    this.closeDOMButton(container)
+    this.L.matListOnCanvas.push(new DisplayMatsOnCanvas({x:16, y:300}, mats, "build", this.p, this.L, this.B))
+
+    let buttonContainer = this.appendAndCreateContainer("flexCenter", container)
+    buttonContainer.elt.style.marginBottom = "0px"
+    let deliverButton = this.appendAndCreateButtonNoEvent("Slå ihop och leverera", "deliver", buttonContainer)
+    return container
   }
 
 
@@ -476,7 +489,7 @@ class MechDOMShape extends DOMShape {
 
     this.closeDOMButton(container)
 
-    this.L.matListOnCanvas.push(new DisplayMatsOnCanvas({x:16, y:300}, this.mech.matList, this.p, this.L, this.B))
+    this.L.matListOnCanvas.push(new DisplayMatsOnCanvas({x:16, y:300}, this.mech.matList, "stateRep", this.p, this.L, this.B))
 
     return container
   }
