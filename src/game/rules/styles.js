@@ -16,6 +16,7 @@ const skin = {
     //textsizes
     textSize: 16,
     hSml: 22,
+    hLrg: 34,
 
 
     col: pallet.c1,

@@ -9,6 +9,8 @@
     // }, false)
 
     let G = new p5(async (p)=>{
+      // let savedGame = CircularJSON.parse(localStorage.getItem("savedGame"))
+      // let gameType = savedGame ? savedGame : newGame
       let gameType = newGame
         // console.log(JSON.parse(window.parent.localStorage.getItem("par")))
         // console.log(window.parent.par)

@@ -28,6 +28,11 @@ class DOMShape {
   }
 
   removeElem() {
+    window.disableEvent = true
+    setTimeout(() => {
+      window.disableEvent = false
+    }, 300);
+
     console.log("remove elems")
     this.removeDom = true
     this.shape.openDOM = false
@@ -469,6 +474,21 @@ class MechDOMShape extends DOMShape {
 
     this.closeDOMButton(container)
     this.L.matListOnCanvas.push(new DisplayMatsOnCanvas({x:16, y:300}, mats, "build", this.p, this.L, this.B))
+
+    let buttonContainer = this.appendAndCreateContainer("flexCenter", container)
+    buttonContainer.elt.style.marginBottom = "0px"
+    let deliverButton = this.appendAndCreateButtonNoEvent("Slå ihop och leverera", "deliver", buttonContainer)
+    return container
+  }
+
+  createInterfaceChallenge() {
+    let container = this.appendAndCreateContainer("block", this.elem)
+    container.elt.style.marginBottom = "0px"
+    let mats = [L.toolMenu.productAndChallengeDisplay.challenge,L.toolMenu.productAndChallengeDisplay.product ]
+
+
+    this.closeDOMButton(container)
+    this.L.matListOnCanvas.push(new DisplayMatsOnCanvas({x:16, y:300}, mats, "challenge", this.p, this.L, this.B))
 
     let buttonContainer = this.appendAndCreateContainer("flexCenter", container)
     buttonContainer.elt.style.marginBottom = "0px"

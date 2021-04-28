@@ -13,12 +13,12 @@ let prodBluePrint = {
       modW: 45,
       modD: 10,
       parts: [
-        {name: "material", parts: {b:35, l:35}, type:"wood", index: 1,
+        {name: "material", partId:newId("part"), parts: {b:35, l:35}, type:"wood", index: 1,
           front: {shape:"rect", x: 40, y: 35, w: -35, h: -35, corners: 10},
           profile: {shape:"quad", x1: 35, y1: 35, x2: 40, y2: 0, x3: 45, y3: 0, x4: 40, y4: 35}
         
         },
-        {name: "material", parts: {b:5, l:35}, type:"wood",  index: 0,
+        {name: "material", partId:newId("part"), parts: {b:5, l:35}, type:"wood",  index: 0,
           front: {shape:"rect", x: 25, y: 50, w: -5, h: -35, corners: 0},
           profile: {shape:"quad", x1: 37.5, y1: 50, x2: 42.5, y2: 15, x3: 45, y3: 15, x4: 40, y4: 50}
         }
@@ -32,7 +32,7 @@ let prodBluePrint = {
       modW: 45,
       modD: 45,
       parts: [
-        {name: "material", parts: {b:45, l:45}, type:"wood", index: 0,
+        {name: "material", partId:newId("part"), parts: {b:45, l:45}, type:"wood", index: 0,
         front: {shape:"rect", x: 0, y: 0, w: 45, h: 5, corners: 0},
         profile: {shape:"rect", x: 0, y: 0, w: 45, h: 5, corners: 0}
         }
@@ -47,22 +47,22 @@ let prodBluePrint = {
       modD: 45,
       parts: [
         //left front leg
-        {name: "material", parts: {b:10, l:50}, type:"wood", index: 1,
+        {name: "material", partId:newId("part"), parts: {b:10, l:50}, type:"wood", index: 1,
           front: {shape:"quad", x1: 5, y1: 0, x2: 0, y2: 50, x3: 5, y3: 50, x4: 10, y4: 0},
           profile: {shape:"quad", x1: 10, y1: 0, x2: 0, y2: 50, x3: 5, y3: 50, x4: 15, y4: 0}
         },
         //right front leg
-        {name: "material", parts: {b:10, l:50}, type:"wood", index: 1,
+        {name: "material", partId:newId("part"), parts: {b:10, l:50}, type:"wood", index: 1,
           front: {shape:"quad", x1: 35, y1: 0, x2: 40, y2: 50, x3: 45, y3: 50, x4: 40, y4: 0},
           profile: {shape:"quad", x1: 10, y1: 0, x2: 0, y2: 50, x3: 5, y3: 50, x4: 15, y4: 0}
         },
         //left Back leg
-        {name: "material", parts: {b:10, l:50}, type:"wood", index: 1,
+        {name: "material", partId:newId("part"), parts: {b:10, l:50}, type:"wood", index: 1,
           front: {shape:"quad", x1: 5, y1: 0, x2: 0, y2: 50, x3: 5, y3: 50, x4: 10, y4: 0},
           profile: {shape:"quad", x1: 35, y1: 0, x2: 40, y2: 50, x3: 45, y3: 50, x4: 40, y4: 0}
         },
         //right back leg
-        {name: "material", parts: {b:10, l:50}, type:"wood", index: 1,
+        {name: "material", partId:newId("part"), parts: {b:10, l:50}, type:"wood", index: 1,
           front: {shape:"quad", x1: 35, y1: 0, x2: 40, y2: 50, x3: 45, y3: 50, x4: 40, y4: 0},
           profile: {shape:"quad", x1: 35, y1: 0, x2: 40, y2: 50, x3: 45, y3: 50, x4: 40, y4: 0}
         }
@@ -76,7 +76,7 @@ let prodBluePrint = {
 
 let startMat = [
   {name: "A", parts: {b:30, l:60}, id:"wood_2373821946", type:"wood"},
-  {name: "B", parts: {b:60, l:60}, id:"wood_2914037864", type:"wood"},
+  {name: "B", parts: {b:60, l:50}, id:"wood_2914037864", type:"wood"},
   {name: "C", parts: {b:70, l:60}, id:"wood_8016393672", type:"wood"}
 ]
 
@@ -87,12 +87,12 @@ let modTest = {
   modW: 45,
   modD: 10,
   parts: [
-    {name: "material", parts: {b:35, l:35}, type:"wood", index: 1,
+    {name: "material", partId:newId("part"), parts: {b:35, l:35}, type:"wood", index: 1,
       front: {shape:"rect", x: 40, y: 35, w: -35, h: -35, corners: 10},
       profile: {shape:"quad", x1: 35, y1: 35, x2: 40, y2: 0, x3: 45, y3: 0, x4: 40, y4: 35}
     
     },
-    {name: "material", parts: {b:5, l:35}, type:"wood",  index: 0,
+    {name: "material", partId:newId("part"), parts: {b:5, l:35}, type:"wood",  index: 0,
       front: {shape:"rect", x: 25, y: 50, w: -5, h: -35, corners: 0},
       profile: {shape:"quad", x1: 37.5, y1: 50, x2: 42.5, y2: 15, x3: 45, y3: 15, x4: 40, y4: 50}
     }

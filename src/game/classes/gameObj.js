@@ -145,6 +145,10 @@ class Board {
 //w
 class Game {
   constructor({...o}, p5, B, assets) {
+    //#dev
+    // console.log(o)
+
+    
     //Mandatory props
     this.p = p5
     this.B = B
@@ -163,6 +167,7 @@ class Game {
 
     this.operations = o.operations ? o.operations : []
     
+    this.materials = []
     this.materials = o.materials ? o.materials.map(item=>{new Material(item,this.p, this, this.B)}) : []
     //#new Material
     this.stateReps = o.stateReps ? o.stateReps.map(item=>new StateRep(item,this.p, this, this.B)) : []
@@ -230,7 +235,7 @@ class Game {
     });
 
     let trigUp = [...opUpdates, ...SRUpdates].find(item=>{
-      console.log(item)
+      // console.log(item)
       item.res
     })
     // console.log("triggerUpdate?:", Boolean(trigUp), trigUp)

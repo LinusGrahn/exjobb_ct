@@ -2,6 +2,7 @@
 
 //operations Classes
 
+
 class Operations {
   constructor({...o}, p5, L, B) {
     this.B = B
@@ -172,14 +173,17 @@ class Operations {
         return !match && rule
       })
     } else {
-      this.toDoMatList = []
-      if(this.portIn.length) {
-        this.portIn.forEach(sr=>{
-          sr.matList.forEach(m=>{
-            this.toDoMatList.push(m)
-          })
-        }) 
-      }
+        this.toDoMatList = []
+        if(this.portIn.length) {
+          this.portIn.forEach(sr=>{
+            sr.matList.forEach(m=>{
+              this.toDoMatList.push(m)
+            })
+          }) 
+        }
+        console.log("build to do", this.toDoMatList)
+        return true
+
     }
     
   }
@@ -575,59 +579,252 @@ class Build extends Operations {
     this.opId = o.opId ? o.opId : newId("opBuild")
 
     this.portIn = []
+    this.prevToDoList = []
 
   }
 
   resetOperation() {
+    return 
+  }
 
+  toDoListChanged(){
+    if ((this.toDoMatList.length==0 || this.prevToDoList.length==0) && (this.toDoMatList.length==this.prevToDoList.length)){
+      return false
+    }
+    return Game.compareArraysByProps(this.toDoMatList, this.prevToDoList, "uniqueKey")
   }
 
   parameterDisplay() {
-    if(Object.values(this.parameters).some(item=>item==null || item==undefined)) {
-      return "Välj vilkor"
-    }
+    return "Slå ihop"
+  }
 
-    let type
-    if(this.parameters.condProp=="b") {
-      type="bredden"
-    } else if(this.parameters.condProp=="l") {
-      type="längden"
-    } else if(this.parameters.condProp=="sRqueue") {
-      type="köplats"
-    }
+  calcMatchValue(incL, corL, incB, corB) {
+    let vList = [incL/corL, incB/corB]
+    console.log("values:", vList)
 
-    let operator = this.parameters.condOperator=="!="? ["≠"] : this.parameters.condOperator
+    // let v = vList.reduce((acc, cur)=>{
+    //   console.log(cur)
+    //   let nCur
+    //   if(cur<1 && cur) {
+    //     console.log("keep same v")
+    //     nCur = cur
+    //   } else if (cur>1 && cur<2) {
+    //     console.log("remove from 2")
+    //     nCur = 2-cur
+    //   } else {
+    //     console.log("floor it")
+    //     nCur = 0.01
+    //   }
+    //   console.log(acc, nCur)
+    //   return acc + nCur
+    // }) 
 
-    let string = `Är [${type}] [${operator}] [${this.parameters.condValue}]`
-    
-    return string
+    let nCur = 0
+    vList.forEach(cur=>{
+          if(cur<=1 && cur) {
+            console.log("keep same v")
+            nCur += cur
+          } else if (cur>1 && cur<2) {
+            console.log("remove from 2")
+            nCur += 2-cur
+          } else {
+            console.log("floor it")
+            nCur += 0.01
+          }
+    })
+
+    console.log("value:", nCur, "from", incL ,"/", corL, incB ,"/", corB)
+    return nCur
   }
 
   executeOp() {
-    // take in the materials 
+    console.log(this.toDoMatList)
 
-    //get the bluePrint
+    // let prodParts = [...this.L.challenge[0].parts]
+    
+    // creates a copy of the blueprint to compare with
+    
+    let bpParts = this.L.challenge[0].parts
+    let toDoList = [...this.toDoMatList]
+    //list of all correct mats
+    let bpMats = []
 
-    //find a way to check and match pieces and create modules of the mats
+    //creates the array for the product with mods with parts empty too be filled with "correct/ncorrect and missing mats/wood"
 
-    //feed it into L.product
-    //if L:product is null create new Material.product
+    bpParts = bpParts.map(mod=>{
+     
 
-    //add displayFront
-    //add displeySide
+      //adds correct mats to bpMats and ads status prop to tell where they belong iin which module
+      mod.parts.forEach(mat=>{
+        let nm = {...mat}
+        nm.belongsToMod = mod.name 
+        bpMats.push(nm)
+      })
+      return {...mod}
+    })
+    
+    //used to remove mats that get ocupied
+    let bpMatsLeft = [...bpMats]
+    // console.log("1-->corrects mats", bpMats)
+
+    //finds pieces that are correct and 
+    let correctMats = toDoList.map((mat, i)=>{
+      mat.removeMat = false
+      let cM = bpMatsLeft.find(m=>mat.parts.l==m.parts.l && mat.parts.b==m.parts.b )
+      if(cM) {
+        cM.status = "correct"
+        cM.nodalFactor = 2
+        bpMatsLeft.splice(bpMatsLeft.findIndex(m=>m.partId==cM.partId),1)
+        mat.removeMat = true
+        return cM
+      } else {
+        return false
+      }
+    }).filter(m=>m)
+
+    toDoList = toDoList.filter(m=>!m.removeMat)
+    //remove matching elememnts from toDo
+
+    console.log("2-->correctMats", correctMats)
+    console.log("toDos left", toDoList)
+    console.log("corrects mats left", bpMatsLeft)
+
+    //incorreect mats match bpMats ---------------------------
+    //every mat in toDoList goes through the bpMatsleft to see which mat it matches best with by
+    //dividing its side with the bpMat side (with som added rules). resulting in a value .01-1
+    
+    let incorrectMats = toDoList.map(mat=>{
+      // console.log("bpLeft",bpMatsLeft.length)
+
+      let matchList = bpMatsLeft.map(m=>{
+        return {bpMat: m, match: this.calcMatchValue(mat.parts.l, m.parts.l, mat.parts.b, m.parts.b) }
+      }).sort((a,b)=>b.match-a.match)
+
+      console.log("matchList", matchList)
+      let iM = matchList[0].bpMat
+      
+      //add that to prodParts
+      iM.status = "incorrect"
+      //adding the "wrong" dimeentions
+      iM.parts = mat.parts
+      iM.nodalFactor = matchList[0].match
+      bpMatsLeft.splice(bpMatsLeft.findIndex(m=>m.partId==iM.partId),1)
+      mat.removeMat = true
+
+      //recalculate shapeddimentions
+      let sides = ["front", "profile"]
+      console.log("incorrect mat", iM)
+      sides.forEach(side=>{
+        console.log(side)
+        let dir = iM.belongsToMod=="Ben" ? 1 : -1
+        iM[side] = {...iM[side]}
+        if(iM[side].shape=="rect") {
+          if(iM.belongsToMod!="Sits") {
+            iM[side].h = iM[side].h < 0 ? iM.parts.l * -1 : iM.parts.l
+          }
+
+          if(iM.belongsToMod=="Sits" && side=="profile") {
+            iM[side].w = iM[side].w < 0 ? iM.parts.l * -1 : iM.parts.l
+          } else {
+            iM[side].w = iM[side].w < 0 ? iM.parts.b * -1 : iM.parts.b
+          }
+          
+        } else {
+          iM[side].y2 = iM[side].y1+(iM.parts.l * dir)
+          iM[side].y3 = iM[side].y4+(iM.parts.l * dir)
+          if(side=="front") {
+            iM[side].x2 = iM[side].x2+iM.parts.l
+            iM[side].x1 = iM[side].x1+iM.parts.l
+          }
+        }
+      })
+
+
+
+      return iM
+    })
+
+    toDoList = toDoList.filter(m=>!m.removeMats)
+    
+    console.log("3-->incorrectMats", incorrectMats)
+    console.log("toDos left", toDoList)
+    console.log("corrects mats left", bpMatsLeft)
+    
+
+    //missing mats
+    let missingMats = bpMatsLeft.map(mat=>{
+      let m = mat
+      m.status = "missing"
+      m.partId = mat.partId
+      m.nodalFactor = 0
+      // consoles.log(m)
+      return m
+    })
+
+    // console.log(correctMats, incorrectMats, missingMats)
+    let prodMats = correctMats.concat(incorrectMats, missingMats)
+    // console.log(prodMats)
+
+
+    let prodParts = bpParts.map(mod=>{
+      let nMod = mod
+      // console.log(nMod.parts)
+      nMod.parts = nMod.parts.map(mat=>{
+        let nMat = prodMats.find(m=>{
+          return m.partId==mat.partId
+        })
+        // console.log(nMat)
+        return nMat
+      })
+      return nMod
+    })
+
+    // console.log(prodParts)
+    //add prop to each piece status = {status: "cor"/"incor"/"missing", corPart: {wood}, tempId: #}
+    //--> join cor and incor arrays
+
+    //--> add missing pieces
+
+  
+    let newProduct = {...this.L.challenge[0]}
+    newProduct.curMechId = "prod"
+    newProduct.fromMechId = "prod"
+    newProduct.parts = prodParts
+    newProduct.id = newId("prod")
+    newProduct.type = "prod"
+
+    let size = this.L.toolMenu.productAndChallengeDisplay.lrg
+
+    this.L.product = []
+    this.L.product.push(new Material(newProduct, this.p, this, this.B))
+    console.log("outputted product", this.L.product)
+    this.L.product[0].front = new MaterialDisplay(size, L.product[0], "front", this.p, this.B, this.L)
+    this.L.product[0].profile = new MaterialDisplay(size, L.product[0], "profile", this.p, this.B, this.L)
+    this.L.toolMenu.productAndChallengeDisplay.product = this.L.product
+
+    console.log("p==p -> true?", this.L.product==this.L.toolMenu.productAndChallengeDisplay.product)
+    // make sure the this.L.product and this.L.toolMenu.productAndChallengeDisplay.product
+
 
     //display mat
-    //if product.display is null create new.
-
-
-
-    return { res: false, message: "no Build operation" }
+    return { res: false, message: "execute run succesfully" }
   }
 
   updateOperationPorts() {
+    let m
     this.updateToDoList()
+    if(this.toDoListChanged()) {
+      console.log("list is different, change product",this.toDoMatList, this.prevToDoList)
+        this.executeOp()
+        m = "changes in Build have been made, executee run"
+    } else {
+      console.log("list is the same", this.toDoMatList, this.prevToDoList)
+      m = "no changes made in Build"
+    }
 
-    return { res: false, message: "no Build operation" }
+
+    //response to global function
+    return { res: false, message: m }
   }
 
 }

@@ -30,15 +30,14 @@ class Material {
     this.curMechId = o.curMechId ? o.curMechId : null
     this.sRqueue = o.sRqueue ? o.sRqueue : null
     //are these necesary?
-    // this.prevOp = o.prevOp ? o.prevOp : null
-    // this.nextOp = o.nextOp ? o.nextOp : null
 
     this.matDisplay = null //contains a matDisplay object
     this.composition = {...o}
 
     // this.compositionProps = o.compositionProps
     // this.evalueate = null
-    if(o.type!="prodBP") {
+
+    if(!o.type.startsWith("prod")) {
       this.L.materials.push(this)
     }
   }
@@ -386,6 +385,7 @@ class MaterialDisplay {
   }
 
   calcRowsNCols(angle) {
+    // console.log(this, "wood or mod or prod")
     //get rows and cols from props of this.composition
     let rows 
     let cols
@@ -394,12 +394,11 @@ class MaterialDisplay {
       rows = this.gridmeassures(this.composition.parts.l) + this.padding * 2
       cols = this.gridmeassures(this.composition.parts.b) + this.padding * 2
       return {rows: rows, cols: cols}
-    } else if (this.composition.type.startsWith("mod")){
-      modules = [this.composition]
     } else {
       modules = this.composition.parts
     }
     //creates an Array with modules H, W, and D from blueprint
+    // console.log("moddules", this.composition)
     modules = modules.map(item=>{
       let blueprint = this.L.moduleList.find(mod=>mod.name==item.name)
       return {h: blueprint.modH, w: blueprint.modW, d:blueprint.modD}
@@ -457,6 +456,7 @@ class MaterialDisplay {
 
 
   drawModule(mat, angle, transX, transY) {
+
     //check if its a bluprint
     if(mat.type.startsWith("modBP")) {
       //it's a bluePrint
@@ -466,11 +466,18 @@ class MaterialDisplay {
       //translate to the boundry pos + padding
       this.p.translate(this.x + this.padding*this.cellSize + transX, this.y + this.padding*this.cellSize+transY)
       
-      //runns through all materilas for a module and draws it. in order of its index.
+      //runs through all materilas for a module and draws it. in order of its index.
+      // console.log(mat.parts)
       mat.parts.sort((a,b)=>a.index-b.index).forEach(item=>{
+        if(item.status=="missing") {
+          return
+        }
         let elm = {...item[angle]}
 
+
+        
         this.p.fill(this.style.matFill)
+        
 
         if(elm.shape == "rect") {
           this.p[elm.shape](this.unitToCell(elm.x), this.unitToCell(elm.y), this.unitToCell(elm.w), this.unitToCell(elm.h), elm.corners)
@@ -493,20 +500,6 @@ class MaterialDisplay {
       let blueprint = this.L.moduleList.find(mod=>mod.name==mat.name)
       console.log(mat, blueprint)
     }
-
-    
-
-
-
-
-    // what angle are we drawing 
-
-    // check pieces for matches
-
-    //
-
-    
-
 
 
   }
@@ -696,6 +689,7 @@ class DisplayMatsOnCanvas {
       part.parts.forEach(m=>{
 
         aux = {type: "wood",  name:null, b: m.parts.b, l: m.parts.l }
+        //if statusProp exist? else null 
         aux.status = null
         partsList.push(aux)
       })
@@ -797,13 +791,14 @@ class DisplayProductAndChallenge {
     this.challenge.front = new MaterialDisplay(this[this.size], this.challenge, "front", this.p, this.B, this.L)
     this.challenge.profile = new MaterialDisplay(this[this.size], this.challenge, "profile", this.p, this.B, this.L)
     this.productmatDisplayUpd()
+
+    console.log("ch==ch?", this.challenge==this.L.challenge[0])
     // this.challenge = this.L.challenge[0]
     //angle?
 
     //{mat: "challenge"/"product", side: "front"/"profile"}
     this.showMat = {mat: "challenge", side: "profile"}
 
-    console.log(this)
 
   }
 
@@ -908,10 +903,10 @@ class DisplayProductAndChallenge {
       list.forEach(item=>{
         let active = item.type==this.showMat.mat || item.type==this.showMat.side
         this.p.push()
-        active ? this.p.fill(this.L.skin.pallet.c2T) : this.p.fill(this.L.skin.pallet.c2)
+        active ? this.p.fill(this.L.skin.pallet.c2T) : this.p.fill(this.L.skin.pallet.c1)
         this.p.rect(item.bX, item.bY, item.bW, item.bH, 10)
         
-        active ? this.p.fill(this.L.skin.pallet.c2) : this.p.fill(this.L.skin.pallet.c1)
+        active ? this.p.fill(this.L.skin.pallet.c2) : this.p.fill(this.L.skin.pallet.c2)
         this.p.noStroke()
         this.p.text(item.txt, item.x, item.y)
         this.p.pop()
@@ -922,9 +917,25 @@ class DisplayProductAndChallenge {
       this.p.push()
       this.p.translate(0, yMD)
       let size = this.calcMDSize()
-      let md = this[this.showMat.mat][this.showMat.side]
-      md.calcGraphics(size)
-      md.display(size.w)
+      //if product make sure it exist
+      let md
+      if(this.showMat.mat!="product") {
+        md = this[this.showMat.mat][this.showMat.side]
+        md.calcGraphics(size)
+        md.display(size.w)
+      } else if(this[this.showMat.mat][0]) {
+        md = this[this.showMat.mat][0][this.showMat.side]
+        // console.log(md, this.showMat)
+        md.calcGraphics(size)
+        md.display(size.w)
+      } else {
+        this.p.noStroke()
+        this.p.fill(this.L.skin.pallet.c2)
+        this.p.text(`Skicka in Material i Slå På-Maskinen
+för att se hur den 
+färdiga produkten 
+kommer att se ut.`, 10, 20, w-30, w-10 )
+      }
       // 
 
       this.p.pop()

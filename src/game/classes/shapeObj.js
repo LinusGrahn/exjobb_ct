@@ -442,16 +442,16 @@ class StateRepShape extends Shape {
     
     let domPos = B.canvasToScreenCoordConverter(10,10)
     this.DOM_mechInterface = new MechDOMShape(domPos, this, this.mech, this.p, this.L, this.B)
-
+    console.log("hihi")
   }
-
-
+  
+  
   display() {
     super.display()
     let s = this.B.gridSize/2
     
     this.p.push()
-
+    
     this.p.textSize(this.typo.textSize)
     this.p.fill(this.typo.col2)
 

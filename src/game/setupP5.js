@@ -53,6 +53,8 @@ const game = (p, gameType, assets) => {
     window.eTimer = null
     window.dev = true
     window.fc = 0
+    window.disableEvent = false
+    window.disableScroll = false
 
 
 
@@ -73,6 +75,23 @@ const game = (p, gameType, assets) => {
     p.scale(B.zF)
     B.drawGrid(L.skin.pallet.c2T)
 
+    p.push()
+    p.stroke(L.skin.pallet.c2T)
+    p.strokeWeight(1)
+    p.fill(L.skin.pallet.c3)
+
+    p.rect(B.snapToGrid(-250), B.snapToGrid(startY-130), 800, 300, 15)
+
+    
+    p.fill(L.skin.pallet.c2)
+    p.noStroke()
+    p.textSize(L.skin.typography.hLrg)
+    p.textFont(L.assets.fonts.headFont)
+    p.text("Materialförådet", -230, startY-80)
+    p.pop()
+
+
+
    //draw entitis 
     // L.sortOperations()
     // L.operations.forEach((item, i)=>{
@@ -87,7 +106,6 @@ const game = (p, gameType, assets) => {
     // window.d = d
 
     let mechArr = [...L.stateReps, ...L.operations].sort((a,b)=>a.shape.moving-b.shape.moving)
-    
     mechArr.forEach(item=>{
       item.shape.display()
     })
@@ -143,6 +161,11 @@ const game = (p, gameType, assets) => {
 
 
   p.mousePressed = function(e) {
+    if(window.disableEvent) {
+      console.log("event disabled")
+      return
+    }
+
     console.log(e.x, e.y)
     console.log(e.target)
 
@@ -246,6 +269,11 @@ const game = (p, gameType, assets) => {
  
   //eventlistener for release event.
   p.mouseReleased = function(e) {
+    if(window.disableEvent) {
+      console.log("event disabled")
+      return
+    }
+
     B.movingBoard = false 
     if(dom) {
       //if a dom element have been clicked
@@ -328,6 +356,11 @@ const game = (p, gameType, assets) => {
 
   //event for drag 
   p.mouseDragged = function(e) {
+    if(window.disableEvent) {
+      console.log("event disabled")
+      return
+    }
+
     eTimer ? eTimer = null : {}
     
     if(dom) {
@@ -390,6 +423,9 @@ const game = (p, gameType, assets) => {
 
 
   p.mouseWheel = function(e){
+    if(window.disableEvent || disableScroll) {
+      return
+    }
     zoom = true
     e.preventDefault()
 

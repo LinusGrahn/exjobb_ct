@@ -50,7 +50,7 @@ let gameBoard = {
   gridSize: 25,
 }
 
-const startY = (gameBoard.w/2 -100) * -1
+const startY = (gameBoard.w/2 -200) * -1
 
 //used to load a game or creat a new game.
 let gameA = {
