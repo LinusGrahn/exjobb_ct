@@ -20,7 +20,7 @@
   --c3: rgb(164,124,93); 
   /* strokeColor + skrokw width == border color  */
   --stroke: 1px solid var(--c2); 
-  --fontSize: 16px;
+  --fontSize: 15px;
   
   --c1T: rgba(68,85,93,.3); 
   --c2T: rgba(220,198,176,.3); 
@@ -55,6 +55,7 @@ canvas {
   padding: 2vh 2vw;
   margin: 3vh 3vw;
   border-radius: var(--corner);
+  z-index: 3;
 
   box-shadow: 1px 8px 28px -8px rgba(0,0,0,0.65);
   -webkit-box-shadow: 1px 8px 28px -8px rgba(0,0,0,0.65);
@@ -174,6 +175,28 @@ canvas {
   border-radius: 50%;
 }
 
+.settingsBar {
+  position: absolute;
+  left: 17px;
+  top: 20px;
+  display: flex;
+  align-items: center;
+  height: 30px;
+  width: 130px;
+  border-radius: 11px;
+  border: 1px solid var(--c2);
+  padding:2px;
+}
+
+.settingsLabel {
+  height: 24px;
+  width: 24px;
+  border-radius: var(--corner);
+  border: 1px solid var(--c2);
+  text-align: center;
+
+}
+
 #matDisplayContainer {
   width: 90%;
   height: 500px;
@@ -181,6 +204,8 @@ canvas {
   border: var(--stroke);
   border-radius: var(--corner);
 }
+
+
 
 
 

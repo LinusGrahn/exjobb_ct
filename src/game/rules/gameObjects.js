@@ -45,8 +45,8 @@ let testOp = ()=>{
 }
 
 let gameBoard = {
-  w: 2400,
-  h: 2400,
+  w: 4400,
+  h: 4400,
   gridSize: 25,
 }
 

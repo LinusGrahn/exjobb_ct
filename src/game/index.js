@@ -24,7 +24,9 @@
           {name: "muda", path: "./assets/icons/icon_spill.png"},
           {name: "nodaler", path: "./assets/icons/icon_nodaler.png"},
           {name: "stateRep", path: "./assets/icons/icon_joinModule.png"},
-          // {name: "sort", path: "./assets/icons/icon_Sort.png"},
+          {name: "trash", path: "./assets/icons/icon_trash.png"},
+          {name: "cross", path: "./assets/icons/icon_crossBeige.png"},
+          {name: "check", path: "./assets/icons/icon_checkBeige.png"},
           // {name: "sort", path: "./assets/icons/icon_Sort.png"},
       
         ],

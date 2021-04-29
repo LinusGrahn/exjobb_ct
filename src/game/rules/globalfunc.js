@@ -20,3 +20,13 @@ const newId = (type) => {
     }
 
   }
+
+const removeFromArray = (arr, index)=> {
+  if(index!=-1) {
+    dev ? console.log("splice ran", index) : {}
+    arr.splice(index, 1)
+  } else {
+    dev ? console.log("splice didn't run", index, arr) : {}
+  }
+  
+}

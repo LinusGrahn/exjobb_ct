@@ -23,25 +23,25 @@ const game = (p, gameType, assets) => {
     //1 create game and board
     //create board and game (using function parameters B, L etc. as functionScope variables insted of making them global)
     let B = new Board(gameBoard, p) 
-    console.log(gameType)
+    // console.log(gameType)
     let L = new Game(gameType, p, B, assets)
     
     //[happens in op tool object]
-    opCut.pos = {x: -275, y: -400}
-    opSort.pos = {x: 150, y: -400}
-    opBuild.pos = {x: -50, y: 500}
+    opCut.pos = {x: -275, y: startY+300}
+    opSort.pos = {x: 150, y: startY+300}
+    opBuild.pos = {x: -50, y: startY+900}
     opMuda.pos = {x: 200, y:100}
-    new Cut(opCut, p, L, B)
-    new Sort(opSort, p, L, B) 
+    // new Sort(opSort, p, L, B) 
+    // new Cut(opCut, p, L, B)
     new Build(opBuild, p, L, B) 
     
-    new Muda(opMuda, p, L, B) // placing a cut operation on board
+    // new Muda(opMuda, p, L, B) // placing a cut operation on board
     
     L.toolMenu = new ToolMenu(B.toolMenuPos, p, L, B)
     // L.toolMenu.setToolMenuPos("topLeft")
 
-    console.log(L.stateReps)
-    console.log(L.operations[0])
+    // console.log(L.stateReps)
+    // console.log(L.operations[0])
 
 
     //global variables for Dev and Debugging
@@ -51,7 +51,7 @@ const game = (p, gameType, assets) => {
     window.removeDom = false
     window.zoom = false
     window.eTimer = null
-    window.dev = true
+    window.dev = false
     window.fc = 0
     window.disableEvent = false
     window.disableScroll = false
@@ -90,21 +90,7 @@ const game = (p, gameType, assets) => {
     p.text("Materialförådet", -230, startY-80)
     p.pop()
 
-
-
-   //draw entitis 
-    // L.sortOperations()
-    // L.operations.forEach((item, i)=>{
-    //   // item.display()
-    // })
-
-    
-
-    // let d = new MaterialDisplay(MatDisplayshape, prodBluePrint, "profile", p, B, L)
-    // let d = new MaterialDisplay(MatDisplayshape, startMat[0], "front", p, B, L)
-    // d.display()
-    // window.d = d
-
+    //ddraw mech elements on canvas
     let mechArr = [...L.stateReps, ...L.operations].sort((a,b)=>a.shape.moving-b.shape.moving)
     mechArr.forEach(item=>{
       item.shape.display()
@@ -114,36 +100,27 @@ const game = (p, gameType, assets) => {
 
     p.pop()
     
-
-    //Toolbar and object unefected by orientation and zoom
     
+    //Toolbar and object unefected by orientation and zoom
     if(L.toolMenu.visible && !B.movingBoard ) {
       L.toolMenu.display()
     }
-
-    // let pos = B.boardToScreenCoordConverter(0,0)
     
-    //DOM elements need to be removed with each draw.
-    // let t = p.createP('this is some text inside inside a p-tag');
-    // t.style('font-size', '20px');
-    // t.style('border', '1px solid red');
-    // t.style('margin', '0');
-    // t.style('padding', '0');
-    // t.position(pos.x ,pos.y);
-
     //Dom elements
     if(!removeDom && !zoom) {
       
       // L.operations[0].shape.DOM_mechInterface.display()
     }
     
+    //elemnts that will be shown with DOM objects
     if(L.matListOnCanvas.length) {
       L.matListOnCanvas.map(m=>m.display())
     }
-
-
-
-
+    
+    if(L.trashcan.active) {
+      L.trashcan.display()
+    }
+    
     //safe for if loop doesn't stop
     if(window.fc>200 && !p.mouseIsPressed) {
       window.fc = 0
@@ -162,12 +139,12 @@ const game = (p, gameType, assets) => {
 
   p.mousePressed = function(e) {
     if(window.disableEvent) {
-      console.log("event disabled")
+      // console.log("event disabled")
       return
     }
 
-    console.log(e.x, e.y)
-    console.log(e.target)
+    // console.log(e.x, e.y)
+    // console.log(e.target)
 
     if(e.target.localName == "canvas" || e.target.className.includes("closeButton")) {
       if(L.domElems.length) {
@@ -176,9 +153,9 @@ const game = (p, gameType, assets) => {
 
       window.dom = false
       removeDom = true
-      console.log("canvas")
+      // console.log("canvas")
     } else {
-      console.log("DOM element")
+      // console.log("DOM element")
       // e.target.style.color = "red"
       // e.target.style.border = "1px solid green"
 
@@ -269,12 +246,16 @@ const game = (p, gameType, assets) => {
  
   //eventlistener for release event.
   p.mouseReleased = function(e) {
+    B.movingBoard = false 
+    
     if(window.disableEvent) {
       console.log("event disabled")
-      return
+      L.trashcan.active = false
+      removeDom = true
+      p.noLoop()
+      window.target = null
+      return false
     }
-
-    B.movingBoard = false 
     if(dom) {
       //if a dom element have been clicked
       return
@@ -310,12 +291,20 @@ const game = (p, gameType, assets) => {
       let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
       
       let endPort = L.ports.find(item=>item.legalConnection(x,y, port))
-      console.log(endPort)
+      // console.log(endPort)
       //if endPort is true the endport object have been passed there and connection is legal
       if(endPort) {
-        port.connection.attachToPort(endPort)
-        let check = L.connectMechs(port.mech, endPort.mech)
-        !check ? console.log("did mechs failed to connect?", port.mech, endPort.mech) : {}
+        let connected = port.connection.attachToPort(endPort)
+        if(connected) {
+          let check = L.connectMechs(port.mech, endPort.mech)
+          if (!check) {
+            console.log("did mechs failed to connect?", port.mech, endPort.mech)
+            port.connection.detachPorts()
+          } 
+        } else {
+          port.connection.killConnection()
+        }
+        
       } else if(!port.open && (port.portName == "portIn" || port.portName == "portOut") ){
         //if a closed OP_portIn or a closed SR_portOut is clicked)
         port.connection.detachPorts()
@@ -329,7 +318,13 @@ const game = (p, gameType, assets) => {
     } else if(target) {
       if(target.shape.moving) {
         let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
-        target.shape.dropped(x,y)
+        if(L.trashcan.opOver && L.trashcan.active) {
+          target.removeOperation()
+          L.toolMenu.visible = true
+        } else {
+          target.shape.dropped(x,y)
+        }
+        L.trashcan.active = false
       } else {
         target.shape.clicked()
       }
@@ -341,7 +336,6 @@ const game = (p, gameType, assets) => {
     
 
     //collect data
- 
     p.noLoop()
 
     
@@ -386,9 +380,15 @@ const game = (p, gameType, assets) => {
     let flagP = port ? port.connection.openEnd : false
 
     if(flagT) {
+      // console.log(target)
+      L.trashcan.active = !target.opId.startsWith("opBuild") ? true : false
       let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
       target.shape.moved(x,y)
       port = null
+      
+      L.trashcan.inside(p.mouseX,p.mouseY)
+
+
     }
 
     if(flagP) {

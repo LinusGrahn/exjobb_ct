@@ -5,7 +5,7 @@ class Board {
     this.zFDef = this.zF
     this.zSpeend = .03; //speed of zooming
     this.x = this.p.windowWidth/2; // defines origin x
-    this.y = this.p.windowHeight*.65; // defines origin y
+    this.y = 1050; // defines origin y
     // min/max values for the board boarders
     this.minX= o.w/2*-1;
     this.minY= o.h/2*-1; 
@@ -13,7 +13,7 @@ class Board {
     this.maxY= o.h/2;
     this.movingBoard = false; // controles if drag event should move the board
     this.gridSize = o.gridSize; // size of each cell in the grid. board min, max diveded by gridSize should equal an intiger.
-    this.toolMenuPos = o.toolMenuPos ? o.toolMenuPos : {x:10, y:10, h:590, w:150, posSetting: "topLeft" }
+    this.toolMenuPos = o.toolMenuPos ? o.toolMenuPos : {x:10, y:10, h:680, w:150, posSetting: "topLeft" }
 
   }
 
@@ -183,6 +183,8 @@ class Game {
 
     this.moduleList = this.getModuleList()
 
+    this.trashcan = new Trashcan(this.p, this, this.B)
+
 
   }
 
@@ -236,20 +238,20 @@ class Game {
 
     let trigUp = [...opUpdates, ...SRUpdates].find(item=>{
       // console.log(item)
-      item.res
+      return item.res
     })
     // console.log("triggerUpdate?:", Boolean(trigUp), trigUp)
 
     if(+this.retriggerUpdate>100) {
       console.log("too many updates triggered")
-      // console.log("opUppdates", opUpdates)
-      // console.log("stateRepUpdates", SRUpdates)
+      console.log("opUppdates", opUpdates)
+      console.log("stateRepUpdates", SRUpdates)
       return
     } 
 
     if(trigUp) {
       this.retriggerUpdate++
-      console.log("update retriggered, cout is:", this.retriggerUpdate)
+      // console.log("update retriggered, cout is:", this.retriggerUpdate)
       this.updateGameState()
     } else {
       this.retriggerUpdate = 0

@@ -10,7 +10,7 @@ const opCut = {
     name: "kapa",
     icon: "cut",
 
-    description: "Den här maskinen beskär virken. Den tar bara emot olika träbitar, inget annat! Du kan välja att beskära bitarna du skickar in längs längden eller längs bredden, samt bestämma mått. Måttet du väljer är var på din valda sida virket kommer kapas. Det nya virket med det definierade måttet skickas ut vid A och resterande virke skickas ut vid B.",
+    description: "Den här maskinen beskär virken. Den tar bara emot olika träbitar, inget annat! Du kan välja att beskära bitarna du skickar in längs längden eller längs bredden, samt bestämma mått. Måttet du väljer kommer att kapas på den sidan du valt. Det nya virket med det definierade måttet skickas ut vid A och resterande virke skickas ut vid B.",
     parameterStatus: "Kapa MÅTTEN av SIDAN",
 
     shape: "OpShape",
@@ -32,7 +32,7 @@ const opCut = {
     //values for measure is "1/2, "1/3", int (cm)
     //value for material is an matObj.parts = {l:int , b:int}
     // console.log("cut executed", side, measure, material)
-    console.log(measure)
+    // console.log(measure)
 
     measure = measure=="1/2" ? +material[side]/2 : measure == "1/3" ? +material[side]/3 : measure 
     
@@ -86,6 +86,7 @@ const opSort = {
   parameters: {condProp: null, condOperator: null, condValue: null },
 
   action: ({...o}, material) => {
+    // console.log(material)
     //material is always one matObj
     let props = ["l","b","type", "name", "sRqueue"] //nr or a string (type is a string)
     let operators = ["==", ">", "<", "!="]
@@ -102,7 +103,7 @@ const opSort = {
     let res
     let prop = (o.condProp == "b" || o.condProp == "l") ? material.parts[o.condProp] : material[o.condProp]
     
-    console.log(o.condProp + ":" + prop, o.condOperator, o.condValue)
+    // console.log(o.condProp + ":" + prop, o.condOperator, o.condValue)
 
     switch (o.condOperator) {
       case "==":
@@ -128,6 +129,7 @@ const opSort = {
 
     // console.log("sort executed", o.condProp + ":" + prop, o.condOperator, o.condValue, "mat: ", material)
 
+  
     return res 
   } 
 }
@@ -233,7 +235,17 @@ const materialDetail = {
 }
 
 
+const challengeInfo = {
+    name: "Bygg en stol",
+
+    description: `Nedan ser du en tydlig beskrivning av stolen vi ska skapa! Här finns en ritning, samt alla mått du behöver. 
+    Det är bara att sätta igång och placera ut mina maskiner!
+    Det är bara att trycka på frågetecknet så kan du se och måtten och ritningen igen`,
+
+    iconPath: null,
+    id: "opChallenge",
+    opId: "opChallenge",
 
 
+}
 
-//

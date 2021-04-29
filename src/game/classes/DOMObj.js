@@ -31,13 +31,14 @@ class DOMShape {
     window.disableEvent = true
     setTimeout(() => {
       window.disableEvent = false
-    }, 300);
+      this.p.redraw()
+    }, 200);
 
     console.log("remove elems")
     this.removeDom = true
     this.shape.openDOM = false
     this.elem.remove()
-    this.L.domElems.splice(this.L.domElems.find(item=>item.id==this.id), 1)
+    removeFromArray(this.L.domElems,this.L.domElems.find(item=>item.id==this.id))
     this.L.matListOnCanvas = []
   }
 
@@ -142,7 +143,7 @@ class DOMShape {
   
   //creates a slider and a clickevent corresponding to propname and eventType (eType).
   appendAndCreateOpSlider(min, max, initV, unit, parent, propName) {
-    console.log(propName)
+    // console.log(propName)
     let className = propName == "condValue" ? "block" : "flex"
     let sliderContainer = this.appendAndCreateContainer(className+" option", parent)
     let slider = this.p.createSlider(min, max, initV, 1)
@@ -325,28 +326,32 @@ class MechDOMShape extends DOMShape {
 
     //check if parameter is set else 
     //set first inputs of each list as default
-    this.mech.parameters.side ? sideContent.find(item=>item.value==this.mech.parameters.side).elm.elt.onclick() : sideContent[0].elm.elt.onclick()
-
-    if(this.mech.parameters.measure) {
-      let m = measureContent.find(item=>item.value==this.mech.parameters.measure || item.value=="nr")
-      if(m.value != "nr") {
-        m.elm.elt.onclick()
-      } else { 
-        m.elm.elt.children[0].innerHTML = this.mech.parameters.measure + " cm"
-        m.elm.elt.children[1].value = this.mech.parameters.measure
-        m.elm.elt.children[1].onchange() 
-      }
-
-    } else {
-      measureContent[0].elm.elt.onclick()
-    }
-
+    
     //adjusts the max value of the slider
     
     
     //setButton
+    
+    if(this.mech.portIn) {
 
-    if(!this.mech.portIn) {
+      this.mech.parameters.side ? sideContent.find(item=>item.value==this.mech.parameters.side).elm.elt.onclick() : sideContent[0].elm.elt.onclick()
+      
+      if(this.mech.parameters.measure) {
+        let m = measureContent.find(item=>item.value==this.mech.parameters.measure || item.value=="nr")
+        if(m.value != "nr") {
+          m.elm.elt.onclick()
+        } else { 
+          m.elm.elt.children[0].innerHTML = this.mech.parameters.measure + " cm"
+          m.elm.elt.children[1].value = this.mech.parameters.measure
+          m.elm.elt.children[1].onchange() 
+        }
+  
+      } else {
+        measureContent[0].elm.elt.onclick()
+      }
+
+    } else {
+      
       let lowerC = this.appendAndCreateContainer("flexCenter", this.elem)
       this.appendAndCreateP("Mata in material i masikinen för för att kapa det.", lowerC)
     }
@@ -427,33 +432,37 @@ class MechDOMShape extends DOMShape {
     }
    
     let unit = this.mech.parameters.condProp == "sRqueue" ? "köplats" : "cm"
-    this.appendAndCreateOpSlider(1, max, inV, unit, valueC, "condValue")
+    let slider = this.appendAndCreateOpSlider(1, max, inV, unit, valueC, "condValue")
 
 
     //check if parameter is set else 
+
+    if(this.mech.portIn) {
     //set first inputs of each list as default
-    this.mech.parameters.side ? operatorContent.find(item=>item.value==this.mech.parameters.side).elm.elt.onclick() : operatorContent[0].elm.elt.onclick()
+    console.log("sort PAR", this.mech.parameters)
+    this.mech.parameters.condProp ? propContent.find(item=>item.value==this.mech.parameters.condProp).elm.elt.onclick() : propContent[0].elm.elt.onclick()
 
-    if(this.mech.parameters.prop) {
-      let m = propContent.find(item=>item.value==this.mech.parameters.measure || item.value=="nr")
-      if(m.value != "nr") {
-        m.elm.elt.onclick()
-      } else { 
-        m.elm.elt.children[0].innerHTML = this.mech.parameters.measure + " cm"
-        m.elm.elt.children[1].value = this.mech.parameters.measure
-        m.elm.elt.children[1].onchange() 
-      }
+    if(this.mech.parameters.condProp) {
+      this.mech.parameters.condOperator ? operatorContent.find(item=>item.value==this.mech.parameters.condOperator).elm.elt.onclick() : operatorContent[0].elm.elt.onclick()
+      
 
-    } else {
-      propContent[0].elm.elt.onclick()
     }
+
+    if(this.mech.parameters.condValue) {
+      console.log(slider)
+      slider.elt.children[0].innerHTML = this.mech.parameters.condValue
+      // m.elm.elt.children[1].value = this.mech.parameters.measure
+      slider.elt.children[1].oninput() 
+      slider.elt.children[1].onchange()
+    } 
 
     //adjusts the max value of the slider
     
     
     // //setButton
 
-    if(!this.mech.portIn) {
+    
+    } else  {
       let lowerC = this.appendAndCreateContainer("flexCenter", this.elem)
       this.appendAndCreateP("Mata in material att sortera det.", lowerC)
     }
@@ -469,15 +478,22 @@ class MechDOMShape extends DOMShape {
   createInterfaceBuild() {
     let container = this.appendAndCreateContainer("block", this.elem)
     container.elt.style.marginBottom = "0px"
-    let mats = [L.toolMenu.productAndChallengeDisplay.challenge,L.toolMenu.productAndChallengeDisplay.product ]
+    let mats = [L.toolMenu.productAndChallengeDisplay.challenge, L.toolMenu.productAndChallengeDisplay.product[0] ]
 
 
     this.closeDOMButton(container)
-    this.L.matListOnCanvas.push(new DisplayMatsOnCanvas({x:16, y:300}, mats, "build", this.p, this.L, this.B))
+    let bottomContainer = this.appendAndCreateContainer("flexCenter", container)
+    bottomContainer.elt.style.marginBottom = "0px"
+    
+    if(this.L.product.length) {
+      this.L.matListOnCanvas.push(new DisplayMatsOnCanvas({x:16, y:300}, mats, "product", this.p, this.L, this.B))
+      let deliverButton = this.appendAndCreateButtonNoEvent("Slå ihop och leverera", "deliver", bottomContainer)
+    } else {
+      this.appendAndCreateP("Utan material kan vi varken kunna leverera eller se hur stolen kommer se ut.", bottomContainer)
 
-    let buttonContainer = this.appendAndCreateContainer("flexCenter", container)
-    buttonContainer.elt.style.marginBottom = "0px"
-    let deliverButton = this.appendAndCreateButtonNoEvent("Slå ihop och leverera", "deliver", buttonContainer)
+    }
+
+    
     return container
   }
 
@@ -486,13 +502,12 @@ class MechDOMShape extends DOMShape {
     container.elt.style.marginBottom = "0px"
     let mats = [L.toolMenu.productAndChallengeDisplay.challenge,L.toolMenu.productAndChallengeDisplay.product ]
 
-
     this.closeDOMButton(container)
     this.L.matListOnCanvas.push(new DisplayMatsOnCanvas({x:16, y:300}, mats, "challenge", this.p, this.L, this.B))
 
-    let buttonContainer = this.appendAndCreateContainer("flexCenter", container)
-    buttonContainer.elt.style.marginBottom = "0px"
-    let deliverButton = this.appendAndCreateButtonNoEvent("Slå ihop och leverera", "deliver", buttonContainer)
+    // let buttonContainer = this.appendAndCreateContainer("flexCenter", container)
+    // buttonContainer.elt.style.marginBottom = "0px"
+    // let deliverButton = this.appendAndCreateButtonNoEvent("Slå ihop och leverera", "deliver", buttonContainer)
     return container
   }
 
@@ -529,6 +544,8 @@ class MechDOMShape extends DOMShape {
       return this["createInterface"+endStr]()
     } else if(this.mech.id.startsWith("stateRep")) {
       return this.createInterfaceStateRep()
+    } else if (this.mech.id.startsWith("bp")) {
+      return this.createInterfaceChallenge()
     }
 
 
@@ -541,7 +558,9 @@ class MechDOMShape extends DOMShape {
     let upperCInfo = this.appendAndCreateContainer("block", this.elem)
     let upperTop = this.appendAndCreateContainer("flex", upperCInfo)
 
-    this.appendAndCreateIcon(this.iconPath, upperTop)
+    if(this.iconPath) {
+      this.appendAndCreateIcon(this.iconPath, upperTop)
+    }
     this.appendAndCreateHeader(this.name.toUpperCase(), this.headerSize, upperTop)
     this.appendAndCreateP(this.description, upperCInfo)
 

@@ -26,7 +26,7 @@ class Operations {
     this.outputtedMatList = o.outputtedMatList ? o.outputtedMatList : []
 
     
-    this.parameters = o.parameters
+    this.parameters = {...o.parameters}
     this.prevParameters = {...this.parameters}
     
     
@@ -116,14 +116,9 @@ class Operations {
 
     this.doneMatList.forEach(item=>{
       let outA = this.portOutA.matList.findIndex(mat=>mat.id==item.id)
-      if(+outA!=-1) {
-        this.portOutA.matList.splice(outA,1)
-      } 
-      
       let outB = this.portOutB.matList.findIndex(mat=>mat.id==item.id)
-      if(+outB!=-1) {
-        this.portOutB.matList.splice(outB,1)
-      } 
+      removeFromArray(this.portOutA.matList,outA)
+      removeFromArray(this.portOutB.matList,outB)
       
       // console.log(outA)
       // console.log(outB)
@@ -140,7 +135,8 @@ class Operations {
       this.toDoMatList = []
       this.removeDoneMatFromPortOuts()
     } else {
-      this.portIn.splice(this.portIn.findIndex(sr=>sr.id==stateRep.id), 1)
+      removeFromArray(this.portIn ,this.portIn.findIndex(sr=>sr.id==stateRep.id))
+
       this.updateToDoList()
     }
 
@@ -181,7 +177,7 @@ class Operations {
             })
           }) 
         }
-        console.log("build to do", this.toDoMatList)
+        // console.log("build to do", this.toDoMatList)
         return true
 
     }
@@ -201,25 +197,28 @@ class Operations {
 
     this.shape.portList.forEach(item=>{
       //remove Connection from connectionsList
-      item.connecion ? this.L.connections.splice(this.L.connections.findIndex(c=>c.id==item.connection), 1) : {}
+      if(item.connecion) {
+        removeFromArray(this.L.connections,this.L.connections.findIndex(c=>c.id==item.connection))
+      }
       
       //remove connection from ports and detach ports.
       if(item.portName=="portIn" && item.connection) {
         console.log(item)
         item.connection.detachPorts()
       } else if(item.connection){
-        console.log(item)
+        // console.log(item)
         item.connection.detachPorts()
       }
 
       
-      
     })
-    mechOuts.forEach(item=>item.removeStateRep())
 
-    this.L.operations.splice(this.L.operations.findIndex(op=>op.id=this.id), 1)
-    
-    this.L.updateGameState()
+    removeFromArray(this.L.shapes,this.L.shapes.findIndex(s=>s.id==this.shape.id))
+
+    mechOuts.forEach(item=>item.removeStateRep())
+    removeFromArray(this.L.operations,this.L.operations.findIndex(op=>op.id==this.id))
+
+    // this.L.updateGameState()
   }
 
   //returns true if parameters changed
@@ -263,7 +262,7 @@ class Cut extends Operations {
       return "Välj vilkor"
     }
 
-    let side = this.parameters.side=="l" ? "längden" : "brädden"
+    let side = this.parameters.side=="l" ? "längden" : "bredden"
 
     let string = `Kapa [${this.parameters.measure}] av [${side}]`
     
@@ -306,6 +305,7 @@ class Cut extends Operations {
             type: item.type,
             name: item.name,
             parts: outI[1],
+            sRqueue: this["portOut" + outI[0].toUpperCase()].matList.length+1,
             prevMat: newPre,
             fromMechId: this.id,
             curMechId: this["portOut" + outI[0].toUpperCase()].id
@@ -354,10 +354,11 @@ class Cut extends Operations {
       mats.forEach(mat=> {
         let SRList = L.stateReps.find(m=>m.id == mat.curMechId).matList
         // console.log("srlist before", SRList.length)
-        SRList.splice(SRList.findIndex(m=>m.uniqueKey==mat.uniqueKey), 1)
-        // console.log("srlist after", SRList.length)
 
-        this.L.materials.splice(this.L.materials.findIndex(m=>m.uniqueKey==mat.uniqueKey && m.clone==mat.clone),1)
+        removeFromArray(SRList,SRList.findIndex(m=>m.uniqueKey==mat.uniqueKey))
+        
+        removeFromArray(this.L.materials,this.L.materials.findIndex(m=>m.uniqueKey==mat.uniqueKey && m.clone==mat.clone))
+
       })
 
       // console.log(L.mat length after",L.materials.length)
@@ -414,15 +415,14 @@ class Sort extends Operations {
     //each element that exist in port ut is removed from portOutMec and from material list
     this.doneMatList.forEach(item=> {
     
-      console.log(console.log(item))
       //removefrom SR
       let srId = this.L.materials.find(m=>m.uniqueKey==item.uniqueKey && m.fromMechId==this.id)
       let srMl = this.L.stateReps.find(mech=>mech.id==srId.curMechId).matList
-      srMl.splice(srMl.findIndex(m=>m.uniqueKey==srId.uniqueKey), 1)
+      removeFromArray(srMl,srMl.findIndex(m=>m.uniqueKey==srId.uniqueKey))
 
 
       //remove from MatList
-      this.L.materials.splice(this.L.materials.findIndex(m=>m.uniqueKey==item.uniqueKey && m.fromMechId==this.id),1)
+      removeFromArray(this.L.materials,this.L.materials.findIndex(m=>m.uniqueKey==item.uniqueKey && m.fromMechId==this.id))
 
     })
     
@@ -485,6 +485,7 @@ class Sort extends Operations {
     
     this.toDoMatList.forEach(item=>{
       let res = this.action(this.parameters, item)
+      console.log("res:",  res,"from sor op of par & mat:",this.parameters, item)
 
       if(this.portIn.passedMatList.find(m=>m.uniqueKey==item.uniqueKey)) {
         // console.log("mat have been processed and was ignored", item)
@@ -595,12 +596,12 @@ class Build extends Operations {
   }
 
   parameterDisplay() {
-    return "Slå ihop"
+    return "Slå ihop [stol]"
   }
 
   calcMatchValue(incL, corL, incB, corB) {
     let vList = [incL/corL, incB/corB]
-    console.log("values:", vList)
+    // console.log("values:", vList)
 
     // let v = vList.reduce((acc, cur)=>{
     //   console.log(cur)
@@ -633,7 +634,7 @@ class Build extends Operations {
           }
     })
 
-    console.log("value:", nCur, "from", incL ,"/", corL, incB ,"/", corB)
+    // console.log("value:", nCur, "from", incL ,"/", corL, incB ,"/", corB)
     return nCur
   }
 
@@ -652,7 +653,6 @@ class Build extends Operations {
     //creates the array for the product with mods with parts empty too be filled with "correct/ncorrect and missing mats/wood"
 
     bpParts = bpParts.map(mod=>{
-     
 
       //adds correct mats to bpMats and ads status prop to tell where they belong iin which module
       mod.parts.forEach(mat=>{
@@ -663,6 +663,16 @@ class Build extends Operations {
       return {...mod}
     })
     
+    //if there's more todo mats then needed the array is plane cut down to the right amount
+    let lengthDif = toDoList.length - bpMats.length
+    console.log("todo length", toDoList.length, lengthDif, )
+    if(lengthDif>0) {
+      toDoList = toDoList.filter((m, i)=>i<7)
+    }
+
+
+    console.log("todo length after, should be 7", toDoList.length)
+
     //used to remove mats that get ocupied
     let bpMatsLeft = [...bpMats]
     // console.log("1-->corrects mats", bpMats)
@@ -674,7 +684,7 @@ class Build extends Operations {
       if(cM) {
         cM.status = "correct"
         cM.nodalFactor = 2
-        bpMatsLeft.splice(bpMatsLeft.findIndex(m=>m.partId==cM.partId),1)
+        removeFromArray(bpMatsLeft,bpMatsLeft.findIndex(m=>m.partId==cM.partId))
         mat.removeMat = true
         return cM
       } else {
@@ -685,9 +695,9 @@ class Build extends Operations {
     toDoList = toDoList.filter(m=>!m.removeMat)
     //remove matching elememnts from toDo
 
-    console.log("2-->correctMats", correctMats)
-    console.log("toDos left", toDoList)
-    console.log("corrects mats left", bpMatsLeft)
+    // console.log("2-->correctMats", correctMats)
+    // console.log("toDos left", toDoList)
+    // console.log("corrects mats left", bpMatsLeft)
 
     //incorreect mats match bpMats ---------------------------
     //every mat in toDoList goes through the bpMatsleft to see which mat it matches best with by
@@ -700,7 +710,7 @@ class Build extends Operations {
         return {bpMat: m, match: this.calcMatchValue(mat.parts.l, m.parts.l, mat.parts.b, m.parts.b) }
       }).sort((a,b)=>b.match-a.match)
 
-      console.log("matchList", matchList)
+      // console.log("matchList", matchList)
       let iM = matchList[0].bpMat
       
       //add that to prodParts
@@ -708,14 +718,13 @@ class Build extends Operations {
       //adding the "wrong" dimeentions
       iM.parts = mat.parts
       iM.nodalFactor = matchList[0].match
-      bpMatsLeft.splice(bpMatsLeft.findIndex(m=>m.partId==iM.partId),1)
+      removeFromArray(bpMatsLeft,bpMatsLeft.findIndex(m=>m.partId==iM.partId))
       mat.removeMat = true
 
       //recalculate shapeddimentions
       let sides = ["front", "profile"]
-      console.log("incorrect mat", iM)
+      // console.log("incorrect mat", iM)
       sides.forEach(side=>{
-        console.log(side)
         let dir = iM.belongsToMod=="Ben" ? 1 : -1
         iM[side] = {...iM[side]}
         if(iM[side].shape=="rect") {
@@ -746,9 +755,9 @@ class Build extends Operations {
 
     toDoList = toDoList.filter(m=>!m.removeMats)
     
-    console.log("3-->incorrectMats", incorrectMats)
-    console.log("toDos left", toDoList)
-    console.log("corrects mats left", bpMatsLeft)
+    // console.log("3-->incorrectMats", incorrectMats)
+    // console.log("toDos left", toDoList)
+    // console.log("corrects mats left", bpMatsLeft)
     
 
     //missing mats
@@ -797,12 +806,12 @@ class Build extends Operations {
 
     this.L.product = []
     this.L.product.push(new Material(newProduct, this.p, this, this.B))
-    console.log("outputted product", this.L.product)
+    // console.log("outputted product", this.L.product)
     this.L.product[0].front = new MaterialDisplay(size, L.product[0], "front", this.p, this.B, this.L)
     this.L.product[0].profile = new MaterialDisplay(size, L.product[0], "profile", this.p, this.B, this.L)
     this.L.toolMenu.productAndChallengeDisplay.product = this.L.product
 
-    console.log("p==p -> true?", this.L.product==this.L.toolMenu.productAndChallengeDisplay.product)
+    // console.log("p==p -> true?", this.L.product==this.L.toolMenu.productAndChallengeDisplay.product)
     // make sure the this.L.product and this.L.toolMenu.productAndChallengeDisplay.product
 
 
@@ -814,11 +823,11 @@ class Build extends Operations {
     let m
     this.updateToDoList()
     if(this.toDoListChanged()) {
-      console.log("list is different, change product",this.toDoMatList, this.prevToDoList)
+      // console.log("list is different, change product",this.toDoMatList, this.prevToDoList)
         this.executeOp()
         m = "changes in Build have been made, executee run"
     } else {
-      console.log("list is the same", this.toDoMatList, this.prevToDoList)
+      // console.log("list is the same", this.toDoMatList, this.prevToDoList)
       m = "no changes made in Build"
     }
 

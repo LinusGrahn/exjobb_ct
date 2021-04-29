@@ -93,7 +93,7 @@ class Shape {
       let y1 = this.bdryY
       let x2 = !flag ? this.bdryX+this.bdryW : this.bdryX+this.bdryW+this.B.gridSize*3
       let y2 = !flag ? this.bdryY+this.bdryH : this.bdryY+this.bdryH+this.B.gridSize*8
-      let stateRepIds
+      let stateRepIds = []
 
       if(flag) {
         stateRepIds = [this.mech.portOutA.id, this.mech.portOutB.id]
@@ -105,12 +105,17 @@ class Shape {
         let id = item.shape.mech.id 
         if(id != this.mech.id && !stateRepIds.find(el=>el==id)) {
           res = item.shape.areaInsideBdry(x1, y1, x2, y2)
+          // let w = x2-x1
+          // let h = y2-y1
+          // res = !res ? item.shape.areaInsideBdry(x1+w/3, y1+h/3, x2-w/3, y2+h/3) : {}
         } else {
           res = false
         }
-        res ? console.log(item) : {}
+        // res ? console.log(item) : {}
+       
+        // console.log("is item droppable", res, item.id)
         return res
-
+        
       }))
     }
     
@@ -209,13 +214,13 @@ class Shape {
 
   // triggered if the shape is clicked
   clicked() {
-    console.log("sets the global removeDom to false")
+    // console.log("sets the global removeDom to false")
     removeDom = false
 
 
     this.selected = true
     // this.selected = false
-    console.log("show me info about this shape, remain selected?")
+    // console.log("show me info about this shape, remain selected?")
     if(!this.openDOM) {
       this.DOM_mechInterface.display()
       this.openDOM = true
@@ -351,7 +356,8 @@ class OpShape extends Shape {
 
     
 
-    if(!this.mech.opId.startsWith("opBuild")) {
+    // if(!this.mech.opId.startsWith("opBuild")) {
+    if(true) {
       this.p.push() 
       let text = this.mech.parameterDisplay().split(" ").map(item=>{
         if(item.startsWith("[")) {
@@ -442,7 +448,6 @@ class StateRepShape extends Shape {
     
     let domPos = B.canvasToScreenCoordConverter(10,10)
     this.DOM_mechInterface = new MechDOMShape(domPos, this, this.mech, this.p, this.L, this.B)
-    console.log("hihi")
   }
   
   
@@ -485,8 +490,11 @@ class StateRepShape extends Shape {
     let qNr = this.mech.matList.length
 
     this.p.fill(this.style.secFill)
+    this.p.stroke(this.L.skin.pallet.stroke)
+    this.p.strokeWeight(3)
     this.p.rect(qX, qY, qS,qS, 50)
     
+    this.p.noStroke()
     this.p.textSize(this.typo.hSml)
     this.p.fill(this.typo.col)
     this.p.textFont(this.L.assets.fonts.breadFont)
@@ -514,7 +522,7 @@ class Port {
     
     this.open = attr.open // 
     //if portName in portInB this.connection is an Array 
-    this.connection =  this.portName == "portInB" ? [] : null
+    this.connection =  this.portName == "portInB" || this.mech.build ? [] : null
    
     let {cX,cY,rot} = this.getPos()
 
@@ -556,7 +564,7 @@ class Port {
   insidePort(x,y) {
     let cX = this.cX
     let cY = this.cY
-    let v = 15
+    let v = 25
     let check = x>cX-v && x<cX+v && y>cY-v && y<cY+v
 
     // if(check) {console.log("event x, y --> ", x, y, "port x, y--> ", this.cX, this.cY)}
@@ -580,7 +588,7 @@ class Port {
         let up = port.portName == r.outP
         let ii = this.mech.id.startsWith(r.inId)
         let ip = this.portName == r.inP
-        console.log(ui, up, ii, ip)
+        // console.log(ui, up, ii, ip)
         return ui && up && ii && ip
       })
 
@@ -595,7 +603,7 @@ class Port {
 
   //create an OPEN connection object and adds it ti this.connection
   createOpenConnection(endPort) {
-    console.log(endPort)
+    // console.log(endPort)
     this.openConnection = true
     this.connection = new Connection(this, endPort, this.p, this.L, this.B)
     return this.connection
@@ -625,17 +633,6 @@ class Port {
       // console.log("new connection created and added to ports")
     }
 
-    //mech connection should if case 1 run in event
-    //mechIn = portIn.mech
-    //mechOut = this.mech
-    
-    
-    //Lines under check:  mech connection for bugdetection 
-    // console.log(portIn.portName, "in", portIn.mech.id, "is: ", portIn.mech[portIn.portName], "and should contain", this.mech)
-    // console.log(this.portName, "in", this.mech.id, "is: ", this.mech[this.portName], "and should contain", portIn.mech)
-    // setTimeout(function() {
-    //   console.log("500 ms ports contain: in", portIn.mech[portIn.portName], "out ", this.mech[this.portName])
-    // }.bind(this), 500);
   }
 
   //removes the connection on this port and opens it
@@ -651,7 +648,8 @@ class Port {
 
     portIn.open = true
     if(portIn.portName == "portInB") {
-      portIn.connection.splice(portIn.connection.findIndex(item=>item.id==connectionId), 1)
+      console.log(connectionId)
+      removeFromArray(portIn.connection, portIn.connection.findIndex(item=>item.id==connectionId) )
     } else {
       portIn.connection = null
     }
@@ -668,12 +666,16 @@ class Port {
       // console.log("-------------------- FUNCTION RUN: port.disply - if port.connection == true-------------------")
 
       if(this.parentShape.moving) {
-        this.connection.updatePos(this.type)
+        if(Array.isArray(this.connection)) {
+          this.connection.forEach(prt=>{prt.updatePos(this.type)})
+        } else {
+          this.connection.updatePos(this.type)
+        }
       }
       
         let check = Array.isArray(this.connection) ? this.connection.length ? true : "empty" : false
         if(check && check!="empty") {
-          console.log("con is array")
+          // console.log("con is array")
           this.connection.forEach(con=>{con.updatePos(this.type); con.display()})
         } else if(this.connection && !check) {
           this.connection.updatePos(this.type)
@@ -751,14 +753,21 @@ class Connection {
 
   //attaches a port to a port when dragged and dropped
   attachToPort(port) {
+    console.log("port should not be undefined")
+    if(!port) {
+      return false
+    }
     eFlow("Connection/attach port")
+
     //port is endPort and is set in this
     //connection end is closed and attached
     this.endPort = port
+
     this.openEnd = false
     this.connectable = true
     // console.log(this.endPort.connection)
-    this.endPort.connection =  (this.endPort.portName=="portInB" || this.endPort.build) ? [...this.endPort.connection, this] : this
+    // console.log("BUild?", this.endPort)
+    this.endPort.connection =  (this.endPort.portName=="portInB" || this.endPort.mech.build) ? [...this.endPort.connection, this] : this
     // console.log(this.endPort.connection)
     
     // console.log(this.endPort, port)
@@ -767,6 +776,8 @@ class Connection {
     this.startPort.connectTwoPorts(this.endPort, false) 
 
     this.L.connections.push(this)
+
+    return true
   }
 
   //Tries connecting to a port
@@ -778,8 +789,9 @@ class Connection {
 
   detachPorts() {
     eFlow("Connection/detachPorts")
-    this.L.connections.splice(this.L.connections.findIndex(item=>item.id == this.id), 1)
-    this.startPort.disconnectTwoPorts(this.endPort)
+    this.startPort.disconnectTwoPorts(this.endPort, this.id)
+
+    removeFromArray(this.L.connections, this.L.connections.findIndex(item=>item.id == this.id))
     
     //redraw ot update
     this.L.updateGameState()
@@ -927,7 +939,7 @@ class Connection {
       }
 
       //stops loop if it bugs
-      if(debug > 300) {
+      if(debug > 700) {
         console.log("pathfinder passed", debug, "check for bug")
         openSet = []
       }
@@ -1017,7 +1029,7 @@ class IconShape extends Shape {
     let offSetY = nY-this.h/2 - this.toolMenu.y
     let newOp
     if(!this.toolMenu.posInsideShape(nX,nY)) {
-      console.log("Create Operation.")
+      // console.log("Create Operation.")
       
       this.toolMenu.targeted = false
       this.toolMenu.visible = false
@@ -1072,14 +1084,6 @@ class IconShape extends Shape {
 
 }
 
-
-
-
-
-
-
-
-
 class ToolMenu {
   constructor({...pos}, p5, L, B) {
     this.p = p5
@@ -1106,8 +1110,50 @@ class ToolMenu {
     this.menuItems = this.getmenuItems()
   }
 
+  getSettingsItems() {
+    let settingItems = [
+      {
+        type: "label",
+        label: "?",
+        trigFunc: ()=>{
+          console.log("setting clicked")
+          let domPos = B.canvasToScreenCoordConverter(10,10)
+          let shape = new MechDOMShape(domPos, challengeInfo, this.L.challenge[0], this.p, this.L, this.B)
+          console.log(shape)
+          shape.display()
+          this.p.redraw()
+
+          // this.openDOM = true
+        }
+      },
+
+    ]
+
+    this.p.push()
+
+    let c = this.p.createDiv()
+    c.elt.className = "settingsBar"
+
+    settingItems.forEach((item, i)=>{
+
+      if(item.type=="label") {
+        let p = this.p.createDiv(item[item.type])
+        p.elt.className = "settingsLabel"
+        p.elt.onclick = ()=>{item.trigFunc()}
+
+        c.elt.appendChild(p.elt)
+        
+      }
+  
+  
+    })
+    
+    this.p.pop()
+  }
+
   getmenuItems() {
-    let list = [opCut, opSort, opMuda]
+    // let list = [opCut, opSort, opMuda]
+    let list = [opCut, opSort]
 
     list = list.map((item, i)=>{
       let pos = {
@@ -1215,26 +1261,23 @@ class ToolMenu {
     this.p.rect(0, 0, this.w, this.h, this.corner)
     this.p.pop()
 
-    //Settings----------------------------------------------
-    this.p.push()
-    this.p.rect(7, 10, this.w-14, 30, 10)
-    
+    //Settings----(DOMELEMENTs)------------------------------------------s
+    this.getSettingsItems()
 
-    this.p.pop()
 
     //Points----------------------------------------------
-    this.p.push()
-    this.p.noStroke()
-    this.p.rect(7, 45, this.w-14, 30, 10)
+    // this.p.push()
+    // this.p.noStroke()
+    // this.p.rect(7, 45, this.w-14, 30, 10)
 
-    this.p.fill(this.L.skin.pallet.c2)
-    this.p.textSize(this.L.skin.typography.textSize)
-    this.p.textFont(this.L.assets.fonts.breadFont)
-    let icon = this.L.assets.loadedIcons.find(item=>item.name=="nodaler").icon
-    this.p.image(icon, 4, 50, 35, 35)
-    // this.p.text("Budget", 15, 71)
-    this.p.text("6000", 35, 75)
-    this.p.pop()
+    // this.p.fill(this.L.skin.pallet.c2)
+    // this.p.textSize(this.L.skin.typography.textSize)
+    // this.p.textFont(this.L.assets.fonts.breadFont)
+    // let icon = this.L.assets.loadedIcons.find(item=>item.name=="nodaler").icon
+    // this.p.image(icon, 4, 50, 35, 35)
+    // // this.p.text("Budget", 15, 71)
+    // this.p.text("6000", 35, 75)
+    // this.p.pop()
 
     //Titel----------------------------------------------
     this.p.push()
@@ -1256,7 +1299,7 @@ class ToolMenu {
     
     //Product representation----------------------------------------------
     let y = this.yAfterOps
-    let pos = {x: 7, y:y+30, w: this.w-14, h: (this.w-14)*1.6}  
+    let pos = {x: 7, y:y+30, w: this.w-14, h: (this.w-14)*2.78}  
     //staterept
     this.p.push()
     this.p.fill(L.skin.typography.col2)
@@ -1269,6 +1312,63 @@ class ToolMenu {
     this.productAndChallengeDisplay.sml = pos
     this.productAndChallengeDisplay.display()
 
+
+
+
+
     this.p.pop()
+  }
+}
+
+class Trashcan {
+  constructor(p5, L, B) {
+    this.p = p5
+    this.L = L
+    this.B = B
+    this.active = false
+    this.opOver = false
+
+    this.pos = {
+      x: this.p.width-170,
+      y: 15,
+      w: 150,
+      icon: this.L.assets.loadedIcons.find(item=>item.name=="trash").icon,
+      iconPath: this.L.assets.iconList.find(item=>item.name=="trash").path
+    }
+  }
+
+  inside(mX,mY) {
+    let {x,y,w} = this.pos
+
+    let bool = (mX > x && mX < x + w) && (mY > y && mY < y + w)
+    this.opOver = bool ? true : false
+
+    return bool 
+  }
+
+  display() {
+    let {x,y,w, icon} = this.pos
+    let fill = this.L.skin.elem.err_elemFill
+    
+    if(this.opOver) {
+      w = w*1.5
+      x = x-85
+      y = y
+      fill = this.L.skin.elem.err_bdryFill
+    }
+    this.p.translate(x,y)
+    this.p.push()
+
+    this.p.stroke(this.L.skin.pallet.c2)
+    this.p.strokeWeight(2)
+    this.p.fill(fill)
+    // this.p.noFill()
+    this.p.rect(0,0, w, w, 15)
+    this.p.image(icon, 0, 0, w, w)
+
+
+    this.p.pop()
+
+
   }
 }

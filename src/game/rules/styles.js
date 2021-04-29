@@ -2,11 +2,13 @@ let pallet = {
   c1: "rgb(68,85,93)", //blue
   c2: "rgb(220,198,176)", //beige
   c3: "rgb(164,124,93)", // terracotta
-  stroke: "black",
+  stroke: "rgb(68,85,93)",
   c1T: "rgba(68,85,93,.3)", //blueTrans
   c2T: "rgba(220,198,176,.3)", //beigeTrans
   c3T: "rgba(16,124,93,.3)", // terracottaTrans
-  mat: "rgb(145, 66, 48)"
+  mat: "rgb(145, 66, 48)",
+  c4: "rgb(204, 136, 69)"
+
 }
 
 const skin = {
@@ -14,7 +16,7 @@ const skin = {
 
   typography: {
     //textsizes
-    textSize: 16,
+    textSize: 15,
     hSml: 22,
     hLrg: 34,
 
@@ -47,12 +49,12 @@ const skin = {
   },
 
   port: {
-    closedCol: "rgb(204, 136, 69)",
+    closedCol: pallet.c4,
     openCol: pallet.c2
   },
 
   connection: {
-    col: "rgb(204, 136, 69)",
+    col: pallet.c4,
     err_col: "red",
     strokeWeigth: 4
   }
