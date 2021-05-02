@@ -18,7 +18,7 @@
 
       let assets = {
         iconList: [
-          {name: "sort", path: "./assets/icons/icon_Sort.png"},
+          {name: "sort", path: "./assets/icons/icon_sort.png"},
           {name: "cut", path: "./assets/icons/icon_cut.png"},
           {name: "build", path: "./assets/icons/icon_joinProduct.png"},
           {name: "muda", path: "./assets/icons/icon_spill.png"},
@@ -35,6 +35,7 @@
         fonts: [
           {name: "breadFont", path: "./assets/fonts/Oswald/Oswald-VariableFont_wght.ttf"},
           {name: "headFont", path: "./assets/fonts/Dela_Gothic_One/DelaGothicOne-Regular.ttf"},
+
         ]
       }
   

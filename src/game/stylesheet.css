@@ -25,7 +25,8 @@
   --c1T: rgba(68,85,93,.3); 
   --c2T: rgba(220,198,176,.3); 
   --c3T: rgba(16,124,93,.3); 
-  --mat: rgb(164,124,93)
+  --mat: rgb(164,124,93);
+  --c4: rgb(204, 136, 69)
 }
 
 body {
@@ -33,6 +34,7 @@ body {
   color: var(--c2);
   font-family: "breadFont";
   font-size: var(--fontSize);
+  background-color: var(--c1);
 }
 
 h1, h2, h3, h4, h5 {
@@ -40,13 +42,9 @@ h1, h2, h3, h4, h5 {
   letter-spacing: 2px;
 }
 
-
-
 canvas {
   border: 1px solid black;
 }
-
-
 
 .wrapper {
   /* height: 35vh; */
@@ -93,7 +91,6 @@ canvas {
 
 .headerSml {
   font-size: 18px;
-
 }
 
 .headerLrg {

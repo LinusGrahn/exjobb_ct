@@ -75,9 +75,9 @@ let prodBluePrint = {
 
 
 let startMat = [
-  {name: "A", parts: {b:30, l:60}, id:"wood_2373821946", type:"wood"},
+  {name: "A", parts: {b:50, l:60}, id:"wood_2373821946", type:"wood"},
   {name: "B", parts: {b:60, l:50}, id:"wood_2914037864", type:"wood"},
-  {name: "C", parts: {b:70, l:60}, id:"wood_8016393672", type:"wood"}
+  {name: "C", parts: {b:35, l:70}, id:"wood_8016393672", type:"wood"}
 ]
 
 let modTest = {

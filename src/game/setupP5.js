@@ -1,6 +1,7 @@
 'use strict'
 
 
+
 const game = (p, gameType, assets) => {
   //used to se the order of execution
   let eFlowArr = []
@@ -55,6 +56,8 @@ const game = (p, gameType, assets) => {
     window.fc = 0
     window.disableEvent = false
     window.disableScroll = false
+    window.target = null
+    window.port = null
 
 
 
@@ -107,7 +110,7 @@ const game = (p, gameType, assets) => {
     }
     
     //Dom elements
-    if(!removeDom && !zoom) {
+    if(!window.removeDom && !zoom) {
       
       // L.operations[0].shape.DOM_mechInterface.display()
     }
@@ -143,6 +146,7 @@ const game = (p, gameType, assets) => {
       return
     }
 
+    console.log(e.target)
     // console.log(e.x, e.y)
     // console.log(e.target)
 
@@ -152,7 +156,7 @@ const game = (p, gameType, assets) => {
       }
 
       window.dom = false
-      removeDom = true
+      window.removeDom = true
       // console.log("canvas")
     } else {
       // console.log("DOM element")
@@ -199,10 +203,10 @@ const game = (p, gameType, assets) => {
 
 
     let mechArr = [...L.stateReps, ...L.operations]
-    let port = null
+    window.port = null
     
-    //checks if a target or a port was hit
-    let target = mechArr.find(item=>{
+    //checks if a window.target or a port was hit
+    window.target = mechArr.find(item=>{
       let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
       let check = item.shape.portList.find(port=>port.insidePort(x,y) && (port.type=="out" || (port.portName=="portIn" && !port.open) ) )
       if(check) {port = check}
@@ -211,38 +215,38 @@ const game = (p, gameType, assets) => {
       return check
     })
 
-    // console.log("CLICKED", port, target)
+    // console.log("CLICKED", port, window.target)
 
-    if(port) {
+    if(window.port) {
       console.log("port Clicked")
-      if(port.type=="out" && port.open) {
+      if(window.port.type=="out" && window.port.open) {
         console.log("port created")
-        port.createOpenConnection(null)
+        window.port.createOpenConnection(null)
         console.log("connection created")
       } else {
         console.log("release connection")
       }
-    } else if (target) {
-      console.log(target.id, "clicked")
+    } else if (window.target) {
+      console.log(window.target.id, "clicked")
       //is it an op or a staterep?
-      if(target.id.startsWith("op")) {
+      if(window.target.id.startsWith("op")) {
 
         //waits before dragging event is activated and if mouse is released before the eTimer is cleared
         window.eTimer = setTimeout(()=>{
-          target.shape.moving = true
+          window.target.shape.moving = true
         }, 200)
 
       } 
 
     } else {
       B.movingBoard = true
-      target = null
+      window.target = null
     }
 
-    window.target = target
-    window.port = port
+  
     return false
   }
+  p.touchStarted = p.mousePressed
  
   //eventlistener for release event.
   p.mouseReleased = function(e) {
@@ -251,28 +255,28 @@ const game = (p, gameType, assets) => {
     if(window.disableEvent) {
       console.log("event disabled")
       L.trashcan.active = false
-      removeDom = true
+      window.removeDom = true
       p.noLoop()
       window.target = null
       return false
     }
-    if(dom) {
+    if(window.dom) {
       //if a dom element have been clicked
       return
     } else {
-      removeDom = true
+      window.removeDom = true
     }
 
     if(L.toolMenu.targeted) {
       console.log("menu targeted")
 
-      if(target) {
-        console.log(target)
-        if(target.moving) {
-          target.dropped()
+      if(window.target) {
+        console.log(window.target)
+        if(window.target.moving) {
+          window.target.dropped()
         } else {
           clearTimeout(eTimer)
-          target.clicked()
+          window.target.clicked()
         }
 
       }
@@ -285,48 +289,48 @@ const game = (p, gameType, assets) => {
 
     eTimer ? clearTimeout(eTimer) : {} 
 
-    if(port) {
+    if(window.port) {
       //port is the starting object. 
 
       let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
       
-      let endPort = L.ports.find(item=>item.legalConnection(x,y, port))
+      let endPort = L.ports.find(item=>item.legalConnection(x,y, window.port))
       // console.log(endPort)
       //if endPort is true the endport object have been passed there and connection is legal
       if(endPort) {
-        let connected = port.connection.attachToPort(endPort)
+        let connected = window.port.connection.attachToPort(endPort)
         if(connected) {
-          let check = L.connectMechs(port.mech, endPort.mech)
+          let check = L.connectMechs(window.port.mech, endPort.mech)
           if (!check) {
-            console.log("did mechs failed to connect?", port.mech, endPort.mech)
+            console.log("did mechs failed to connect?", window.port.mech, endPort.mech)
             port.connection.detachPorts()
           } 
         } else {
           port.connection.killConnection()
         }
         
-      } else if(!port.open && (port.portName == "portIn" || port.portName == "portOut") ){
+      } else if(!window.port.open && (window.port.portName == "portIn" || window.port.portName == "portOut") ){
         //if a closed OP_portIn or a closed SR_portOut is clicked)
-        port.connection.detachPorts()
-      } else if (port.open){
+        window.port.connection.detachPorts()
+      } else if (window.port.open){
         //port is open and is being dragged
-        port.connection.killConnection()
+        window.port.connection.killConnection()
 
       }
 
       window.port = null
-    } else if(target) {
-      if(target.shape.moving) {
+    } else if(window.target) {
+      if(window.target.shape.moving) {
         let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
         if(L.trashcan.opOver && L.trashcan.active) {
-          target.removeOperation()
+          window.target.removeOperation()
           L.toolMenu.visible = true
         } else {
-          target.shape.dropped(x,y)
+          window.target.shape.dropped(x,y)
         }
         L.trashcan.active = false
       } else {
-        target.shape.clicked()
+        window.target.shape.clicked()
       }
 
 
@@ -340,13 +344,14 @@ const game = (p, gameType, assets) => {
 
     
     //to avoid duplicattion of dom elements they need to be removed
-    if(removeDom) {
+    if(window.removeDom) {
       L.domElems.forEach(item=>{item.removeElem()})
-      removeDom = false
+      window.removeDom = false
     }
 
     return false
   }
+  p.touchEnded = p.mouseReleased
 
   //event for drag 
   p.mouseDragged = function(e) {
@@ -357,17 +362,17 @@ const game = (p, gameType, assets) => {
 
     eTimer ? eTimer = null : {}
     
-    if(dom) {
+    if(window.dom) {
       //if a dom element have been clicked
       return
     } else {
-      removeDom = true
+      window.removeDom = true
     }
 
     if(L.toolMenu.targeted) {
-      if(target.moving) {
-        target = target.updatePos(p.mouseX, p.mouseY)
-        // console.log(target)
+      if(window.target.moving) {
+        window.target = window.target.updatePos(p.mouseX, p.mouseY)
+        // console.log(window.target)
       }
     }
 
@@ -376,15 +381,15 @@ const game = (p, gameType, assets) => {
   
     //if any operation is targeted
     // L.operations.find(item=>item.selected) ? L.operations.find(item=>item.selected).dragged() : {};
-    let flagT = target ? target.shape.moving : false
-    let flagP = port ? port.connection.openEnd : false
+    let flagT = window.target ? window.target.shape.moving : false
+    let flagP = window.port ? window.port.connection.openEnd : false
 
     if(flagT) {
-      // console.log(target)
-      L.trashcan.active = !target.opId.startsWith("opBuild") ? true : false
+      // console.log(window.target)
+      L.trashcan.active = !window.target.opId.startsWith("opBuild") ? true : false
       let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
-      target.shape.moved(x,y)
-      port = null
+      window.target.shape.moved(x,y)
+      window.port = null
       
       L.trashcan.inside(p.mouseX,p.mouseY)
 
@@ -394,8 +399,8 @@ const game = (p, gameType, assets) => {
     if(flagP) {
       let {x,y} = B.canvasToboardCoordCoverter(p.mouseX, p.mouseY)
       // console.log("dragging?")
-      port.connection.draggingEnd(x,y)
-      target = null
+      window.port.connection.draggingEnd(x,y)
+      window.target = null
     }
 
     //if board is targeted.
@@ -420,6 +425,7 @@ const game = (p, gameType, assets) => {
     
     return false
   }
+  p.touchMoved = p.mouseDragged
 
 
   p.mouseWheel = function(e){
@@ -440,6 +446,7 @@ const game = (p, gameType, assets) => {
     p.redraw()
     zoom = false
   }
+  
 
   p.preload = function() {
     assets.loadedIcons = assets.iconList.map(item=>{
