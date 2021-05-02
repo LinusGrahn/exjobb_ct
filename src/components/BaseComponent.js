@@ -1,4 +1,5 @@
 import React from 'react';
+import rt from '../api/root'
 
 
 
@@ -24,7 +25,7 @@ const BaseComponent = (props) => {
         </div>
 
         <div className="buttonCont">
-          {openNext && location.pathname!=="/outro" ? <input type="button" className="pageButton" value={buttonValue} onClick={buttonEvent} ></input> : []}
+          {openNext && location.pathname!==rt+"outro" ? <input type="button" className="pageButton" value={buttonValue} onClick={buttonEvent} ></input> : []}
         </div>
 
     </div>

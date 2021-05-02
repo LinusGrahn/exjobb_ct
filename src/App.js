@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import Navbar from './components/Navbar';
+// import Navbar from './components/Navbar';
 import db from './api/firestoreAPI';
 import Game from './components/Game';
 import {tests, content} from './testContent/tests';
@@ -8,20 +8,22 @@ import Questions from './components/Questions';
 import Introduction from './components/Introduction';
 import ClientJS from 'clientjs'
 import {BrowserRouter, Route, Switch} from 'react-router-dom';
-
+import rt from './api/root'
 
 //root component
 class App extends Component {
+  
   state = {
     gVar: null,
     participant: {},
-    routeOrderArr: ["/", "/qB", "/pr1", "/q1", "/pr2", "/q2", "/pr3", "/q3", "/pr4", "/q4", "/i?", "/qG", "/outro"],
+    routeOrderArr: [rt, rt+"qB", rt+"pr1", rt+"q1", rt+"pr2", rt+"q2", rt+"pr3", rt+"q3", rt+"pr4", rt+"q4", rt+"i?", rt+"qG", rt+"outro"],
   }
+
 
   componentDidMount() {
     const client = new window.ClientJS();
     const fp = client.getFingerprint()
-    // console.log("fp", fp)
+    console.log("fp", fp)
 
     this.getParticipant(fp)
       
@@ -34,12 +36,12 @@ class App extends Component {
     }
 
     if(curPath==="complete") {
-      window.location.pathname = "/outro"
+      window.location.pathname = rt+"outro"
       return
     }
 
     if(!curPath) {
-      window.location.pathname = "/"
+      window.location.pathname = rt
       
     } else if(window.location.pathname !== curPath) {
       window.location.pathname = curPath
@@ -75,14 +77,15 @@ class App extends Component {
   getParticipant(fp) {
     //if fingerprint exist get else create new 
     fp = "fp_"+fp
+   
     //fetch an existing participant
     db.collection('participants').where('fingerPrint','==', fp).get().then((snapshot)=>{
       //gets an array of documents (participants) from the collection "participants"
       // console.log(snapshot.docs[0].data())
+      
       let p = snapshot.docs[0].data()
-
       if(p.status) {
-        if(window.location.pathname !== "/outro") {
+        if(window.location.pathname !== rt+"outro") {
           this.directPar("complete")
         }
         return
@@ -96,15 +99,19 @@ class App extends Component {
 
     }).catch(err=>{
       let e = err.toString()
-
-      if(e==="TypeError: snapshot.docs[0] is undefined") {
-        // console.log("new par")
-        return true
-      } else {
-        // console.log("error when checking for a par.fingerprint...", e)
-        return false
-      }
-      
+      // let eList = [
+      //   "TypeError: Cannot read property 'data' of undefined",
+      //   "TypeError: snapshot.docs[0] is undefined"
+      // ]
+      // console.log(e)
+      // if(eList.find(em=>em==e)) {
+      //   // console.log("new par")
+      //   return true
+      // } else {
+      //   // console.log("error when checking for a par.fingerprint...", e)
+      //   return false
+      // }
+      return true
       
     }).then(newP=>{
 
@@ -124,7 +131,7 @@ class App extends Component {
     
     let newPar = {
       fingerPrint: fp,
-      currentPage: "/",
+      currentPage: rt,
       gameVariation: this.state.gVar,
       answers: [],
       enteredPage: Date(),
@@ -139,12 +146,10 @@ class App extends Component {
       }
     }
 
-    
-
-
     this.setState({
       participant: newPar
     })
+
     this.directPar(newPar.currentPage)
   }
 
@@ -156,13 +161,13 @@ class App extends Component {
     }
 
     par.currentPage = this.nextPage(page)
-
+    console.log(par)
     db.collection('participants').where('fingerPrint', '==', par.fingerPrint).get().then(snapshot=>{
       let p = snapshot.docs[0].data()
       // console.log("update answerArr and page", p.answers, par.answers, p.currentPage, par.currentPage)
 
 
-      if(p.currentPage === "/qG") {
+      if(p.currentPage === rt+"qG") {
         // console.log("Remove par from parlist and add to complete list")
         this.addParticipantToFinishedCollection(par)
       } else {
@@ -211,7 +216,7 @@ class App extends Component {
   }
 
   nextPage(curP) {
-    curP = curP.match(/[i]\d/gm)? "/i?" : curP
+    curP = curP.match(/[i]\d/gm)? rt+"i?" : curP
     let list = this.state.routeOrderArr
     let curI = list.findIndex(p=>p===curP)
     let next = list[curI+1]
@@ -234,37 +239,29 @@ class App extends Component {
     return (
       <BrowserRouter>
           <div className="App">
-            <Navbar />
+            {/* <Navbar /> */}
               <Switch>
-                <Route exact path="/" render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.intro.contentArr} /> )}/>
-                <Route exact path="/outro" render={(props) => (<Introduction {...props} contentArr={content.outro.contentArr} /> )}/>
+                <Route exact path={rt} render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.intro.contentArr} /> )}/>
+                <Route exact path={rt+"outro"} render={(props) => (<Introduction {...props} contentArr={content.outro.contentArr} /> )}/>
 
-                <Route exact path="/pr1" render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test1.problem}/> )}/>
-                <Route exact path="/pr2" render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test2.problem}/> )}/>
-                <Route exact path="/pr3" render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test3.problem}/> )}/>
-                <Route exact path="/pr4" render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test4.problem}/> )}/>
+                <Route exact path={rt+"pr1"} render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test1.problem}/> )}/>
+                <Route exact path={rt+"pr2"} render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test2.problem}/> )}/>
+                <Route exact path={rt+"pr3"} render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test3.problem}/> )}/>
+                <Route exact path={rt+"pr4"} render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test4.problem}/> )}/>
                 
-                <Route exact path="/q1" render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.test1.questionArr} tId={tests.test1.problem.id}/> )}/>
-                <Route exact path="/q2" render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.test2.questionArr} tId={tests.test2.problem.id}/> )}/>
-                <Route exact path="/q3" render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.test3.questionArr} tId={tests.test3.problem.id}/> )}/>
-                <Route exact path="/q4" render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.test4.questionArr} tId={tests.test4.problem.id}/> )}/>
-                <Route exact path="/qG" render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.testGame.questionArr} tId={tests.testGame.id}/> )}/>
-                <Route exact path="/qB" render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.testBasic.questionArr} tId={tests.testBasic.id}/> )}/>
+                <Route exact path={rt+"q1"} render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.test1.questionArr} tId={tests.test1.problem.id}/> )}/>
+                <Route exact path={rt+"q2"} render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.test2.questionArr} tId={tests.test2.problem.id}/> )}/>
+                <Route exact path={rt+"q3"} render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.test3.questionArr} tId={tests.test3.problem.id}/> )}/>
+                <Route exact path={rt+"q4"} render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.test4.questionArr} tId={tests.test4.problem.id}/> )}/>
+                <Route exact path={rt+"qG"} render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.testGame.questionArr} tId={tests.testGame.id}/> )}/>
+                <Route exact path={rt+"qB"} render={(props) => (<Questions {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} questionArr={tests.testBasic.questionArr} tId={tests.testBasic.id}/> )}/>
 
-                <Route exact path="/i1" render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.gameIntro1.contentArr}/> )}/>
-                <Route exact path="/i2" render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.gameIntro2.contentArr}/> )}/>
-                <Route exact path="/i3" render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.gameIntro3.contentArr}/> )}/>
-                <Route exact path="/i4" render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.gameIntro4.contentArr}/> )}/>
+                <Route exact path={rt+"i1"} render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.gameIntro1.contentArr}/> )}/>
+                <Route exact path={rt+"i2"} render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.gameIntro2.contentArr}/> )}/>
+                <Route exact path={rt+"i3"} render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.gameIntro3.contentArr}/> )}/>
+                <Route exact path={rt+"i4"} render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.gameIntro4.contentArr}/> )}/>
 
-                <Route exact path="/play_game" render={(props) => (<Game {...props} nextPage={this.nextPage.bind(this)} participant={this.state.participant}/> )} />
-
-                {/* <Route exact path="/play_game" render={() => {window.location.href="http://localhost:8888/exjobb_ct/src/game/play_game.html"}} /> */}
-                {/* <Route exact path="/q2" render={(props) => (<BaseComponent {...props} message={"avslutningsfrågor"} /> )} />
-                <Route exact path="/end" render={(props) => (<BaseComponent {...props} message={"Slut på undersökning"} /> )} /> */}
-                {/* <Route exact path="/plants" render={(props) => (<Plants {...props} plants={state.plantList} deletePlant={this.deletePlant}/>)} /> */}
-                {/* <Route exact path="/">
-                  <Plants plants={state.plants} />
-                </Route> */}
+                <Route exact path={rt+"play_game"} render={(props) => (<Game {...props} nextPage={this.nextPage.bind(this)} participant={this.state.participant}/> )} />
              
             </Switch>
           </div>
