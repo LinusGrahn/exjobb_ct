@@ -16,7 +16,7 @@ class App extends Component {
   state = {
     gVar: null,
     participant: {},
-    routeOrderArr: [rt, rt+"qB", rt+"pr1", rt+"q1", rt+"pr2", rt+"q2", rt+"pr3", rt+"q3", rt+"pr4", rt+"q4", rt+"i?", rt+"qG", rt+"outro"],
+    routeOrderArr: [rt, rt+"qB", rt+"pr1", rt+"q1", rt+"pr2", rt+"q2", rt+"pr3", rt+"q3", rt+"pr4", rt+"q4", rt+"i?", rt+"play_game",rt+"qG", rt+"outro"],
   }
 
 
@@ -29,25 +29,31 @@ class App extends Component {
       
   }
 
-  directPar(curPath) {
-    // console.log(window.location.pathname, curPath)
-    if(curPath===undefined || curPath===null) {
-      return
-    }
+  // directPar(curPath) {
+  //   // console.log(window.location.pathname, curPath)
+  //   if(curPath===undefined || curPath===null) {
+  //     return
+  //   }
+  //   let redir
+  //   console.log("path wind", window.location.pathname)
+    
 
-    if(curPath==="complete") {
-      window.location.pathname = rt+"outro"
-      return
-    }
-
-    if(!curPath) {
-      window.location.pathname = rt
+  //   if(!curPath) {
+  //     redir =  <Redirect to={rt} />
+  //     // window.location.pathname = rt
       
-    } else if(window.location.pathname !== curPath) {
-      window.location.pathname = curPath
-    }
+  //   } else if(curPath==="complete") {
+  //     <Redirect to={rt+"outro"} />
+  
+  //     // window.location.pathname = rt+"outro"
+  //   } else if(window.location.pathname !== curPath) {
+  //     redir =  <Redirect to={curPath} />
 
-  }
+  //     // window.location.pathname = curPath
+  //   }
+
+  //   this.setState({redir: redir})
+  // }
 
   getAndUpdVariation() {
     db.collection('gameVariation').get("flag").then((snapshot)=>{
@@ -86,31 +92,20 @@ class App extends Component {
       let p = snapshot.docs[0].data()
       if(p.status) {
         if(window.location.pathname !== rt+"outro") {
-          this.directPar("complete")
+          window.location = "https://en.wikipedia.org/wiki/Computational_thinking"
+
         }
         return
       } else {
+        // this.directPar(p.currentPage)
         this.setState({
           participant: p
         })
-        this.directPar(p.currentPage)
 
       }
 
     }).catch(err=>{
       let e = err.toString()
-      // let eList = [
-      //   "TypeError: Cannot read property 'data' of undefined",
-      //   "TypeError: snapshot.docs[0] is undefined"
-      // ]
-      // console.log(e)
-      // if(eList.find(em=>em==e)) {
-      //   // console.log("new par")
-      //   return true
-      // } else {
-      //   // console.log("error when checking for a par.fingerprint...", e)
-      //   return false
-      // }
       return true
       
     }).then(newP=>{
@@ -150,13 +145,18 @@ class App extends Component {
       participant: newPar
     })
 
-    this.directPar(newPar.currentPage)
   }
 
   //update participant
   updateParticipant(page, ansArr) {
     let par = {...this.state.participant}
     if(ansArr) {
+      ansArr.forEach(ans => {
+        let fI = par.answers.findIndex(el=>el.qId===ans.qId)
+        if(fI!==-1){
+          par.answers.splice(fI,1)
+        }
+      });
       par.answers = [...par.answers, ...ansArr]
     }
 
@@ -166,34 +166,27 @@ class App extends Component {
       let p = snapshot.docs[0].data()
       // console.log("update answerArr and page", p.answers, par.answers, p.currentPage, par.currentPage)
 
-
       if(p.currentPage === rt+"qG") {
         // console.log("Remove par from parlist and add to complete list")
         this.addParticipantToFinishedCollection(par)
       } else {
+
         db.collection('participants').doc(p.fingerPrint).set(par)
       }
 
       this.setState({
         participant: par
       })
-      //updatePar
+      
       return false
     }).catch(err=>{
       let e = err.toString()
-
-      if(e==="TypeError: snapshot.docs[0] is undefined") {
-        // console.log("new par")
-        return true
-      } else {
-        // console.log("error when checking for a par.fingerprint...", e)
-        return false
-      }
+      console.log(e)
       
-      
+      return true
     }).then(newP=>{
 
-      // console.log("new par will be added if true", newP, par)
+      console.log("new par will be added if true", newP, par)
 
       if(newP){
         db.collection('participants').doc(par.fingerPrint).set(par)
@@ -205,9 +198,9 @@ class App extends Component {
     })
 
     // console.log("toDB",par)
-    // this.setState({
-    //   participant: par
-    // })
+    this.setState({
+      participant: par
+    })
   }
 
   addParticipantToFinishedCollection(par) {
@@ -217,6 +210,7 @@ class App extends Component {
 
   nextPage(curP) {
     curP = curP.match(/[i]\d/gm)? rt+"i?" : curP
+    curP = curP===rt.slice(0,-1) ? rt : curP
     let list = this.state.routeOrderArr
     let curI = list.findIndex(p=>p===curP)
     let next = list[curI+1]
@@ -236,6 +230,7 @@ class App extends Component {
   render() {
     // console.log("par", this.state.participant)
     // console.log("I start from all", tests, content)
+    console.log(this.state)
     return (
       <BrowserRouter>
           <div className="App">

@@ -3,21 +3,26 @@ import BaseComponent from './BaseComponent'
 import QuestionElement from './QuestionElement'
 import prob1 from '../images/test1_Bridges.png'
 import prob2 from '../images/test2_SocialMedia.png'
+// import rt from '../api/root'
 
 
 
 
 const Problem = (props) => {
-  // let {title, bgImg, content, buttonEvent, buttonValue} = {...props}
-  // let {plant, openDetail} = props 
+
   let images = [prob1, prob2]
   let {title, text, imgNr, answers, id, cA} = {...props.problem}
   let {history, location,  nextPage, updateParticipant} = {...props}
 
+  
   const [delayAnswer, setDelayAnswer] = useState(true)
   const [data, setData] = useState([])
   const [openNext, setOpenNext] = useState(false)
-
+  
+  // if(participant.currentPage!==location.pathname) {
+  //   console.log("paths", participant.currentPage, location.pathname)
+  //   // window.location = rt
+  // }
 
   const updateAnsInPar = (ans)=> {
     if(!ans.ans) {

@@ -1,18 +1,17 @@
 import React, {useState}  from 'react';
 import BaseComponent from './BaseComponent'
 import introImages from '../images/introImgs.js';
+// import rt from '../api/root'
 
 
 
 
 const Introduction = (props) => {
-  // let {title, bgImg, content, buttonEvent, buttonValue} = {...props}
-  // let {plant, openDetail} = props 
   let {contentArr, nextPage, history, location, updateParticipant} = {...props}
-  // console.log("intro props", props)
+  
+  console.log("intro props", props)
   
   const [page, setPages] = useState(0)
-
 
   let formContent = () => {
     return contentArr.map(elm=>{
@@ -47,6 +46,7 @@ const Introduction = (props) => {
     },
 
   }
+  
 
   return (
     <div>

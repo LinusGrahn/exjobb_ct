@@ -1,7 +1,7 @@
 import React, {useState}  from 'react';
 import BaseComponent from './BaseComponent'
 import QuestionElement from './QuestionElement'
-
+// import rt from '../api/root'
 
 
 
@@ -13,6 +13,11 @@ const Questions = (props) => {
 
   const [openNext, setOpenNext] = useState(false)
   const [data, setData] = useState([])
+
+  // if(participant.currentPage!==location.pathname) {
+  //   window.location = rt
+  // }
+
 
   if(tId==="t_game") {
     questionArr = questionArr.filter(q=>{

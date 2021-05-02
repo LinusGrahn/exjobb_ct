@@ -486,7 +486,7 @@ const gameIntro2_HWHC = {
   testVariation: "2_HWHC"
 }
 const gameIntro3_LWLC = {
-  conntentArr: [
+  contentArr: [
   {
     text: "Välkommen till Seymours Stolar!",
     img: null,//path
