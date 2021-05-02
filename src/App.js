@@ -14,7 +14,7 @@ class App extends Component {
   state = {
     gVar: null,
     participant: {},
-    routeOrderArr: ["/", "/qB", "/pr1", "/q1", "/pr2", "/q2", "/pr3", "/q3", "/pr4", "/q4", "/i?", "/play_game", "/qG"]
+    routeOrderArr: ["/", "/qB", "/pr1", "/q1", "/pr2", "/q2", "/pr3", "/q3", "/pr4", "/q4", "/i?", "/qG", "outro"]
   }
 
   componentDidMount() {
@@ -22,13 +22,31 @@ class App extends Component {
     
     //checkdigitalFingreprint
     //exist-->
-    
+    if(this.state.participant.fingerPrint) {
+      console.log("get par")
+      this.getParticipant()
+    } else {
+      console.log("new par")
+      this.createParticipant()
+      this.getAndUpdVariation()
+      // browserHistory.push("/")
+    }
     // this.getParticipant()
+    
     //redirect to current page
     
     //don't exist-->
-    this.createParticipant()
-    this.getAndUpdVariation()
+  }
+
+  directPar(curPath) {
+    console.log(window.location.pathname, curPath)
+
+    if(!curPath) {
+      window.location.pathname = "/"
+    } else if(window.location.pathname !== curPath) {
+      window.location.pathname = curPath
+    }
+
   }
 
   getAndUpdVariation() {
@@ -62,12 +80,13 @@ class App extends Component {
     //fetch an existing participant
     db.collection('participants').get().then((snapshot)=>{
       //gets an array of documents (participants) from the collection "participants"
-      console.log(snapshot.docs[0].data())
+      // console.log(snapshot.docs[0].data())
       let p = snapshot.docs[0].data()
 
       this.setState({
         participant: p
       })
+      this.directPar(p.currentPage)
     })
   }
 
@@ -75,6 +94,7 @@ class App extends Component {
   createParticipant() {
     
     let newPar = {
+      fingerPrint: "NewFP"+Math.floor(Math.random()*1000),
       currentPage: "/",
       gameVariation: this.state.gVar,
       answers: [],
@@ -92,23 +112,63 @@ class App extends Component {
 
     
 
+
     this.setState({
       participant: newPar
     })
+    this.directPar(newPar.currentPage)
   }
 
   //update participant
   updateParticipant(page, ansArr) {
     let par = {...this.state.participant}
     if(ansArr) {
-      par.answers = [...par.answers, ...[ansArr]]
+      par.answers = [...par.answers, ...ansArr]
     }
 
     par.currentPage = this.nextPage(page)
 
-    // db.collection('participants').doc("flag").set({
-    //   flag: updFlag
-    // })
+    db.collection('participants').where('fingerPrint', '==', par.fingerPrint).get().then(snapshot=>{
+      let p = snapshot.docs[0].data()
+      console.log("update answerArr and page", p.answers, par.answers, p.currentPage, par.currentPage)
+
+
+      if(p.currentPage === "/qB") {
+        console.log("Remove par from parlist and add to complete list")
+        this.addParticipantToFinishedCollection(par)
+      } else {
+        db.collection('participants').doc(p.fingerPrint).set(par)
+      }
+
+      this.setState({
+        participant: par
+      })
+      //updatePar
+      return false
+    }).catch(err=>{
+      let e = err.toString()
+
+      if(e==="TypeError: snapshot.docs[0] is undefined") {
+        console.log("new par")
+        return true
+      } else {
+        console.log("error when checking for a par.fingerprint...", e)
+        return false
+      }
+      
+      
+    }).then(newP=>{
+
+      console.log("new par will be added if true", newP, par)
+
+      if(newP){
+        db.collection('participants').doc(par.fingerPrint).set(par)
+        this.setState({
+          participant: par
+        })
+      }
+
+    })
 
     console.log("toDB",par)
     // this.setState({
@@ -116,12 +176,9 @@ class App extends Component {
     // })
   }
 
-  removeParticipant() {
-
-  } 
-
-  addParticipantToFinishedCollection() {
-
+  addParticipantToFinishedCollection(par) {
+    db.collection('participants').doc(par.fingerPrint).delete()
+    db.collection('CompleteParticipants').doc(par.fingerPrint).set(par)
   }
 
   nextPage(curP) {
@@ -151,6 +208,7 @@ class App extends Component {
             <Navbar />
               <Switch>
                 <Route exact path="/" render={(props) => (<Introduction {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} contentArr={content.intro.contentArr} /> )}/>
+                <Route exact path="/outro" render={(props) => (<Introduction {...props} contentArr={content.outro.contentArr} /> )}/>
 
                 <Route exact path="/pr1" render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test1.problem}/> )}/>
                 <Route exact path="/pr2" render={(props) => (<Problem {...props} updateParticipant={this.updateParticipant.bind(this)} nextPage={this.nextPage.bind(this)} participant={this.state.participant} problem={tests.test2.problem}/> )}/>

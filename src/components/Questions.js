@@ -65,7 +65,8 @@ const Questions = (props) => {
   }
 
   const checkOpenNext = ()=>{
-    if(data.length === questionArr.length && !openNext) {
+    let sub = questionArr.find(el=>el.type==="text") ? -1 : 0
+    if(data.length === questionArr.length+sub && !openNext) {
       // console.log("activate next")
       setOpenNext(true)
     }

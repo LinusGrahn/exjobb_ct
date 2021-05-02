@@ -10,7 +10,7 @@ type = !type ? "multi" : type
 const dateStarted = Date()
 
 const updParData = (ans)=> {
-  // console.log("updData", ans, answer)
+  console.log("updData", ans)
   let chAns = ansCnt
   if(answered!==ans && answered) {
     chAns++
@@ -25,6 +25,21 @@ const updParData = (ans)=> {
   
   // console.log("save a/znswer in Question",ansObj)
   updateAnsInPar(ansObj)
+}
+
+const updParTxtAns = (ans) =>{
+  console.log("updTxt", ans)
+
+  let ansObj = {
+    ans: ans ? ans : "", 
+    qId: qId,
+    timeStarted: dateStarted,
+    timeAnswerd: Date(),
+    changedAns: 0
+  }
+
+  updateAnsInPar(ansObj)
+
 }
 
 
@@ -53,7 +68,13 @@ const scaleAnswerElements = ()=> {
 
 const textAnswerElement = ()=> {
   //EVENT send data?
-  return (<div>get me a text window</div>)
+  return (<div>
+    <textarea id="q_txt" name="textArea" 
+    onFocus={()=>{updParData(document.getElementById("q_txt").value)}}
+    onBlur={()=>{updParData(document.getElementById("q_txt").value)}}
+
+    ></textarea>
+  </div>)
 
 }
 

@@ -536,6 +536,15 @@ const gameIntro4_HWLC = {
   testVariation:"4_HWLC"
 }
 
+const outro = {
+  contentArr: [
+    {
+      text: (<p>Stort tack för ditt deltagande!<br></br>Har du några funderaingar eller frågor så är du välkommen att höra av dig! </p>),
+      nextPage: "1",//path
+    }
+  ]
+}
+
 const tests = {
   test1: test1,
   test2: test2,
@@ -549,7 +558,8 @@ const content = {
   gameIntro1: gameIntro1_LWHC,
   gameIntro2: gameIntro2_HWHC,
   gameIntro3: gameIntro3_LWLC,
-  gameIntro4: gameIntro4_HWLC
+  gameIntro4: gameIntro4_HWLC,
+  outro: outro
 }
 
 export  {tests, content}
