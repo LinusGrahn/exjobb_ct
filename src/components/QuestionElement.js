@@ -10,7 +10,7 @@ type = !type ? "multi" : type
 const dateStarted = Date()
 
 const updParData = (ans)=> {
-  console.log("updData", ans)
+  // console.log("updData", ans)
   let chAns = ansCnt
   if(answered!==ans && answered) {
     chAns++
@@ -28,7 +28,7 @@ const updParData = (ans)=> {
 }
 
 const updParTxtAns = (ans) =>{
-  console.log("updTxt", ans)
+  // console.log("updTxt", ans)
 
   let ansObj = {
     ans: ans ? ans : "", 
@@ -68,10 +68,10 @@ const scaleAnswerElements = ()=> {
 
 const textAnswerElement = ()=> {
   //EVENT send data?
-  return (<div>
+  return (<div className="textareaCont">
     <textarea id="q_txt" name="textArea" 
-    onFocus={()=>{updParData(document.getElementById("q_txt").value)}}
-    onBlur={()=>{updParData(document.getElementById("q_txt").value)}}
+    onFocus={()=>{updParTxtAns(document.getElementById("q_txt").value)}}
+    onBlur={()=>{updParTxtAns(document.getElementById("q_txt").value)}}
 
     ></textarea>
   </div>)

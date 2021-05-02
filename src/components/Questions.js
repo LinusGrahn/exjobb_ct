@@ -8,11 +8,17 @@ import QuestionElement from './QuestionElement'
 const Questions = (props) => {
   // let {title, bgImg, content, buttonEvent, buttonValue} = {...props}
   // let {plant, openDetail} = props 
-  let {questionArr, nextPage, history, location, updateParticipant, tId} = {...props}
-  console.log("propQuestions",props)
+  let {questionArr, nextPage, history, location, updateParticipant, tId, participant} = {...props}
+  // console.log("propQuestions",props)
 
   const [openNext, setOpenNext] = useState(false)
   const [data, setData] = useState([])
+
+  if(tId==="t_game") {
+    questionArr = questionArr.filter(q=>{
+      return !q.id.startsWith("q1") || q.id.startsWith("q1_game_"+participant.gameVariation)
+    })
+  }
 
 
   const formContent = () => {
@@ -60,7 +66,7 @@ const Questions = (props) => {
       setData(d)
 
 
-      console.log("update answers in db", d)
+      // console.log("update answers in db", d)
     }
   }
 

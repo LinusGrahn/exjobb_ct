@@ -51,7 +51,7 @@ const Problem = (props) => {
     }
 
     setData(d)
-    console.log("update answers in db", d)
+    // console.log("update answers in db", d)
   }
 
 

@@ -6,6 +6,7 @@ import React from 'react';
 const BaseComponent = (props) => {
   let {content, buttonEvent, buttonValue, bgImg, title} = {...props.content}
   let openNext = props.openNext
+  let {location} = {...props}
 
 
   let className = ()=>{
@@ -23,7 +24,7 @@ const BaseComponent = (props) => {
         </div>
 
         <div className="buttonCont">
-          {openNext ? <input type="button" className="pageButton" value={buttonValue} onClick={buttonEvent} ></input> : []}
+          {openNext && location.pathname!=="/outro" ? <input type="button" className="pageButton" value={buttonValue} onClick={buttonEvent} ></input> : []}
         </div>
 
     </div>

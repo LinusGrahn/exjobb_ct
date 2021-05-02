@@ -6,43 +6,41 @@ import {tests, content} from './testContent/tests';
 import Problem from './components/Problem';
 import Questions from './components/Questions';
 import Introduction from './components/Introduction';
-
+import ClientJS from 'clientjs'
 import {BrowserRouter, Route, Switch} from 'react-router-dom';
+
 
 //root component
 class App extends Component {
   state = {
     gVar: null,
     participant: {},
-    routeOrderArr: ["/", "/qB", "/pr1", "/q1", "/pr2", "/q2", "/pr3", "/q3", "/pr4", "/q4", "/i?", "/qG", "outro"]
+    routeOrderArr: ["/", "/qB", "/pr1", "/q1", "/pr2", "/q2", "/pr3", "/q3", "/pr4", "/q4", "/i?", "/qG", "/outro"],
   }
 
   componentDidMount() {
-    //fetches the participant or creates a new one
-    
-    //checkdigitalFingreprint
-    //exist-->
-    if(this.state.participant.fingerPrint) {
-      console.log("get par")
-      this.getParticipant()
-    } else {
-      console.log("new par")
-      this.createParticipant()
-      this.getAndUpdVariation()
-      // browserHistory.push("/")
-    }
-    // this.getParticipant()
-    
-    //redirect to current page
-    
-    //don't exist-->
+    const client = new window.ClientJS();
+    const fp = client.getFingerprint()
+    // console.log("fp", fp)
+
+    this.getParticipant(fp)
+      
   }
 
   directPar(curPath) {
-    console.log(window.location.pathname, curPath)
+    // console.log(window.location.pathname, curPath)
+    if(curPath===undefined || curPath===null) {
+      return
+    }
+
+    if(curPath==="complete") {
+      window.location.pathname = "/outro"
+      return
+    }
 
     if(!curPath) {
       window.location.pathname = "/"
+      
     } else if(window.location.pathname !== curPath) {
       window.location.pathname = curPath
     }
@@ -52,7 +50,7 @@ class App extends Component {
   getAndUpdVariation() {
     db.collection('gameVariation').get("flag").then((snapshot)=>{
       //gets an array of documents (participants) from the collection "participants"
-      console.log("gV", snapshot.docs[0].data())
+      // console.log("gV", snapshot.docs[0].data())
       let res = snapshot.docs[0].data()
       
       let updFlag = (res.flag >=4 || res.flag <1) ? 1 : res.flag+1
@@ -74,27 +72,58 @@ class App extends Component {
   }
 
   //get an existing participant
-  getParticipant() {
+  getParticipant(fp) {
     //if fingerprint exist get else create new 
-
+    fp = "fp_"+fp
     //fetch an existing participant
-    db.collection('participants').get().then((snapshot)=>{
+    db.collection('participants').where('fingerPrint','==', fp).get().then((snapshot)=>{
       //gets an array of documents (participants) from the collection "participants"
       // console.log(snapshot.docs[0].data())
       let p = snapshot.docs[0].data()
 
-      this.setState({
-        participant: p
-      })
-      this.directPar(p.currentPage)
+      if(p.status) {
+        if(window.location.pathname !== "/outro") {
+          this.directPar("complete")
+        }
+        return
+      } else {
+        this.setState({
+          participant: p
+        })
+        this.directPar(p.currentPage)
+
+      }
+
+    }).catch(err=>{
+      let e = err.toString()
+
+      if(e==="TypeError: snapshot.docs[0] is undefined") {
+        // console.log("new par")
+        return true
+      } else {
+        // console.log("error when checking for a par.fingerprint...", e)
+        return false
+      }
+      
+      
+    }).then(newP=>{
+
+      console.log("new par", newP)
+
+      if(newP){
+        this.createParticipant(fp)
+        this.getAndUpdVariation()
+      }
+
     })
+
   }
 
   //create a new participant
-  createParticipant() {
+  createParticipant(fp) {
     
     let newPar = {
-      fingerPrint: "NewFP"+Math.floor(Math.random()*1000),
+      fingerPrint: fp,
       currentPage: "/",
       gameVariation: this.state.gVar,
       answers: [],
@@ -130,11 +159,11 @@ class App extends Component {
 
     db.collection('participants').where('fingerPrint', '==', par.fingerPrint).get().then(snapshot=>{
       let p = snapshot.docs[0].data()
-      console.log("update answerArr and page", p.answers, par.answers, p.currentPage, par.currentPage)
+      // console.log("update answerArr and page", p.answers, par.answers, p.currentPage, par.currentPage)
 
 
-      if(p.currentPage === "/qB") {
-        console.log("Remove par from parlist and add to complete list")
+      if(p.currentPage === "/qG") {
+        // console.log("Remove par from parlist and add to complete list")
         this.addParticipantToFinishedCollection(par)
       } else {
         db.collection('participants').doc(p.fingerPrint).set(par)
@@ -149,17 +178,17 @@ class App extends Component {
       let e = err.toString()
 
       if(e==="TypeError: snapshot.docs[0] is undefined") {
-        console.log("new par")
+        // console.log("new par")
         return true
       } else {
-        console.log("error when checking for a par.fingerprint...", e)
+        // console.log("error when checking for a par.fingerprint...", e)
         return false
       }
       
       
     }).then(newP=>{
 
-      console.log("new par will be added if true", newP, par)
+      // console.log("new par will be added if true", newP, par)
 
       if(newP){
         db.collection('participants').doc(par.fingerPrint).set(par)
@@ -170,15 +199,15 @@ class App extends Component {
 
     })
 
-    console.log("toDB",par)
+    // console.log("toDB",par)
     // this.setState({
     //   participant: par
     // })
   }
 
   addParticipantToFinishedCollection(par) {
-    db.collection('participants').doc(par.fingerPrint).delete()
-    db.collection('CompleteParticipants').doc(par.fingerPrint).set(par)
+    db.collection('participants').doc(par.fingerPrint).set({fingerPrint: par.fingerPrint, status: "complete"})
+    db.collection('completeParticipants').doc(par.fingerPrint).set(par)
   }
 
   nextPage(curP) {
@@ -187,7 +216,7 @@ class App extends Component {
     let curI = list.findIndex(p=>p===curP)
     let next = list[curI+1]
     if(next.includes("?")) {
-      next = next.replace("?", this.state.gVar)
+      next = next.replace("?", this.state.participant.gameVariation)
     } 
     console.log("curPageI and P is: ", curI, curP, "next path is:", next)
 
@@ -200,7 +229,7 @@ class App extends Component {
   }
   
   render() {
-    console.log("par", this.state.participant)
+    // console.log("par", this.state.participant)
     // console.log("I start from all", tests, content)
     return (
       <BrowserRouter>

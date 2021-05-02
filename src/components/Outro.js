@@ -10,12 +10,12 @@ const Outro = (props) => {
 
   let content = {
     content: contentArr[0],
-    bgImg: "seymourBG",
+    bgImg: "seymourBG noButton",
   }
 
   return (
     <div>
-        <BaseComponent {...props} content={content} openNext={false}/>
+        <BaseComponent {...props} content={content} openNext={false} />
     </div>
   )
 }

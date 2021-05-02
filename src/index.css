@@ -122,6 +122,22 @@ img {
   margin: 20px 0 0px;
 }
 
+.textareaCont {
+  display: flex;
+  justify-content: center;
+}
+
+textarea {
+  background-color: var(--c1T);
+  width: 80%;
+  height: 160px;
+  border-radius: var(--corner);
+  border:2px solid var(--c1);
+  padding: 5px;
+  font-family: "breadFont";
+
+}
+
 .pageButton {
   padding: 15px 20px;
   font-family: "breadFont";
